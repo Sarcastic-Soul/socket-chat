@@ -3,6 +3,9 @@
 
 A real-time chat application built with React (frontend) and Express.js (backend) using Socket.io for live communication.
 
+![Chat App Screenshot](./screenshots/home-ss.png)
+![Chat App Screenshot](./screenshots/conversation-ss.png)
+
 ## Features ✨
 
 - User login with email and password authentication 🔐  

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import MessageContainer from "../../components/messages/MessageContainer";
-import Sidebar from "../../components/sidebar/Sidebar";
+import MessageContainer from "../components/messages/MessageContainer";
+import Sidebar from "../components/sidebar/Sidebar";
 
 const Home = () => {
 	const [sidebarWidth, setSidebarWidth] = useState(300);

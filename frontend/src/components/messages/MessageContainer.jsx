@@ -24,7 +24,6 @@ const MessageContainer = () => {
 				<NoChatSelected />
 			) : (
 				<>
-					{/* Header */}
 					<div className="bg-white/10 backdrop-blur-lg px-4 py-3 shadow-sm flex items-center gap-3 border-b border-white/10">
 						<div className="w-10 h-10 rounded-full overflow-hidden">
 							<img

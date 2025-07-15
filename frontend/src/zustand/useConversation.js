@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-const EXPIRY_TIME = 24 * 60 * 60 * 1000; // 1 day in ms
+const EXPIRY_TIME = 24 * 60 * 60 * 1000;
 
 const useConversation = create((set, get) => ({
 	selectedConversation: null,
@@ -15,7 +15,7 @@ const useConversation = create((set, get) => ({
 			...get().messageCache,
 			[chatId]: {
 				messages,
-				timestamp: Date.now(), // ✅ Store time
+				timestamp: Date.now(),
 			},
 		};
 

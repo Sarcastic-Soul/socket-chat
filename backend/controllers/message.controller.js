@@ -4,7 +4,8 @@ import { getReceiverSocketId, io } from "../socket/socket.js";
 
 export const sendMessage = async (req, res) => {
     try {
-        const { message } = req.body;
+        const { message, mediaUrl, mediaType } = req.body;
+        // console.log("sendMessage body:", req.body);
         const { id: receiverId } = req.params;
         const senderId = req.user._id;
 
@@ -21,23 +22,20 @@ export const sendMessage = async (req, res) => {
         const newMessage = new Message({
             senderId,
             receiverId,
-            message,
+            message: message || "",
+            mediaUrl: mediaUrl || null,
+            mediaType: mediaType || "text",
         });
 
         if (newMessage) {
             conversation.messages.push(newMessage._id);
         }
 
-        // await conversation.save();
-        // await newMessage.save();
-
         // this will run in parallel
         await Promise.all([conversation.save(), newMessage.save()]);
 
-        // SOCKET IO FUNCTIONALITY WILL GO HERE
         const receiverSocketId = getReceiverSocketId(receiverId);
         if (receiverSocketId) {
-            // io.to(<socket_id>).emit() used to send events to specific client
             io.to(receiverSocketId).emit("newMessage", newMessage);
         }
 
@@ -54,7 +52,6 @@ export const getMessages = async (req, res) => {
         const { before, limit = 50 } = req.query;
         const senderId = req.user._id;
 
-        // Find the conversation
         const conversation = await Conversation.findOne({
             participants: { $all: [senderId, userToChatId] },
         });
@@ -70,15 +67,71 @@ export const getMessages = async (req, res) => {
             }
         }
 
-        // Fetch messages sorted by createdAt descending (latest first), then reverse to ascending
         const messages = await Message.find(messageQuery)
             .sort({ createdAt: -1 })
             .limit(parseInt(limit))
             .lean();
 
-        res.status(200).json(messages.reverse());
+        res.status(200).json(messages);
+
     } catch (error) {
         console.error("Error in getMessages controller:", error.message);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+export const addReaction = async (req, res) => {
+    try {
+        const { messageId } = req.params;
+        const { reaction } = req.body;
+        const userId = req.user._id;
+
+        const message = await Message.findById(messageId);
+
+        if (!message) {
+            return res.status(404).json({ error: "Message not found" });
+        }
+
+        const existingReactionIndex = message.reactions.findIndex(
+            (r) => r.userId.toString() === userId.toString() && r.reaction === reaction
+        );
+
+        if (existingReactionIndex !== -1) {
+            message.reactions.splice(existingReactionIndex, 1);
+        } else {
+            const existingAnyReactionIndex = message.reactions.findIndex(
+                (r) => r.userId.toString() === userId.toString()
+            );
+            if (existingAnyReactionIndex !== -1) {
+                message.reactions.splice(existingAnyReactionIndex, 1);
+            }
+            message.reactions.push({ userId, reaction });
+        }
+
+        await message.save();
+
+        const conversation = await Conversation.findOne({
+            messages: messageId,
+        });
+
+        if (conversation) {
+            const receiverId = conversation.participants.find(
+                (p) => p.toString() !== userId.toString()
+            );
+            const receiverSocketId = getReceiverSocketId(receiverId);
+            if (receiverSocketId) {
+                io.to(receiverSocketId).emit("messageReaction", message);
+            }
+
+            const senderSocketId = getReceiverSocketId(userId);
+            if (senderSocketId && senderSocketId !== receiverSocketId) {
+                io.to(senderSocketId).emit("messageReaction", message);
+            }
+        }
+
+        res.status(200).json(message);
+    } catch (error) {
+        console.error("Error in addReaction controller: ", error.message);
         res.status(500).json({ error: "Internal server error" });
     }
 };

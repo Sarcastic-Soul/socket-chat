@@ -4,34 +4,46 @@ import useConversation from "../zustand/useConversation";
 import notificationSound from "../assets/sounds/notification.mp3";
 
 const useListenMessages = () => {
-	const { socket } = useSocketContext();
-	const {
-		messages,
-		setMessages,
-		selectedConversation,
-		messageCache,
-		setMessageCache,
-	} = useConversation();
+    const { socket } = useSocketContext();
+    const { addMessage, updateMessage, selectedConversation } = useConversation();
 
-	useEffect(() => {
-		socket?.on("newMessage", (newMessage) => {
-			newMessage.shouldShake = true;
-			const sound = new Audio(notificationSound);
-			sound.play();
+    useEffect(() => {
+        const handleNewMessage = (newMessage) => {
+            // Only add message if it's for the currently selected conversation
+            if (selectedConversation &&
+                (newMessage.senderId === selectedConversation._id ||
+                    newMessage.receiverId === selectedConversation._id)) {
 
-			// Update local state
-			const updatedMessages = [...messages, newMessage];
-			setMessages(updatedMessages);
+                newMessage.shouldShake = true;
+                const sound = new Audio(notificationSound);
+                sound.play();
 
-			// ✅ Update cached messages for this conversation
-			if (selectedConversation) {
-				setMessageCache(selectedConversation._id, updatedMessages);
-			}
-		});
+                addMessage(newMessage);
+            }
+        };
 
-		return () => socket?.off("newMessage");
-	}, [socket, messages, setMessages, selectedConversation, setMessageCache]);
+        const handleMessageReaction = (updatedMessage) => {
+            // Only update message if it's for the currently selected conversation
+            if (selectedConversation &&
+                (updatedMessage.senderId === selectedConversation._id ||
+                    updatedMessage.receiverId === selectedConversation._id)) {
 
+                updateMessage(updatedMessage);
+            }
+        };
+
+        if (socket) {
+            socket.on("newMessage", handleNewMessage);
+            socket.on("messageReaction", handleMessageReaction);
+        }
+
+        return () => {
+            if (socket) {
+                socket.off("newMessage", handleNewMessage);
+                socket.off("messageReaction", handleMessageReaction);
+            }
+        };
+    }, [socket, addMessage, updateMessage, selectedConversation]);
 };
 
 export default useListenMessages;

@@ -1,4 +1,3 @@
-// hooks/useGetUserDetails.js
 import { useEffect, useState } from 'react';
 import {useAuthContext} from '../context/AuthContext';
 
@@ -6,7 +5,7 @@ const useGetUserDetails = () => {
     const [userDetails, setUserDetails] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const { authUser } = useAuthContext(); // Get the logged-in user ID
+    const { authUser } = useAuthContext();
 
     useEffect(() => {
         const getUserDetails = async () => {
@@ -19,7 +18,7 @@ const useGetUserDetails = () => {
             setLoading(true);
             setError(null);
             try {
-                const res = await fetch(`/api/users/${authUser._id}`); // API endpoint to fetch user details by ID
+                const res = await fetch(`/api/users/${authUser._id}`);
                 const data = await res.json();
 
                 if (data.error) {
@@ -34,7 +33,7 @@ const useGetUserDetails = () => {
         };
 
         getUserDetails();
-    }, [authUser]); // Re-fetch if authUser changes
+    }, [authUser]);
 
     return { userDetails, loading, error };
 };

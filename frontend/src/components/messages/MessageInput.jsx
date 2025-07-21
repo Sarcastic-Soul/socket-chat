@@ -36,8 +36,8 @@ const MessageInput = () => {
             }
 
             setSelectedFile(file);
-            setFilePreview(URL.createObjectURL(file)); // Create URL for preview
-            setMessage(""); // Clear text message if file is selected
+            setFilePreview(URL.createObjectURL(file));
+            setMessage("");
         }
     };
 
@@ -45,7 +45,7 @@ const MessageInput = () => {
         setSelectedFile(null);
         setFilePreview(null);
         if (fileInputRef.current) {
-            fileInputRef.current.value = ""; // Clear file input value
+            fileInputRef.current.value = "";
         }
     };
 
@@ -73,14 +73,12 @@ const MessageInput = () => {
 
         try {
             if (selectedFile) {
-                // Step 1: Get Cloudinary Signature from your backend
                 const signatureRes = await fetch("/api/cloudinary/signature");
                 if (!signatureRes.ok) {
                     throw new Error(`Failed to get Cloudinary signature: ${signatureRes.statusText}`);
                 }
                 const { signature, timestamp, cloudName, apiKey, folder } = await signatureRes.json();
 
-                // Step 2: Upload file directly to Cloudinary
                 const formData = new FormData();
                 formData.append("file", selectedFile);
                 formData.append("api_key", apiKey);
@@ -88,7 +86,6 @@ const MessageInput = () => {
                 formData.append("timestamp", timestamp);
                 formData.append("folder", folder);
 
-                // Determine resource type for Cloudinary (image or video)
                 const resourceType = selectedFile.type.startsWith("image/") ? "image" : "video";
                 formData.append("resource_type", resourceType);
 
@@ -108,21 +105,20 @@ const MessageInput = () => {
                 const cloudinaryData = await cloudinaryUploadRes.json();
                 mediaData = {
                     url: cloudinaryData.secure_url,
-                    type: resourceType, // Use 'image' or 'video' based on file
+                    type: resourceType,
                 };
                 toast.success("Media uploaded to Cloudinary!");
             }
 
-            // Step 3: Send message/media URL to your backend
-            await sendMessage(message.trim(), mediaData); // Pass message text and media data
+            await sendMessage(message.trim(), mediaData);
 
             setMessage("");
-            removeSelectedFile(); // Clear selected file and preview
+            removeSelectedFile();
         } catch (error) {
             console.error("Error sending media/message:", error.message);
             toast.error(error.message || "Failed to send message.");
         } finally {
-            setUploading(false); // Indicate end of upload process
+            setUploading(false);
         }
     };
 
@@ -158,7 +154,7 @@ const MessageInput = () => {
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     className="w-full rounded-lg bg-gray-800 border border-gray-600 text-white text-sm pr-20 py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={uploading} // Disable input during upload
+                    disabled={uploading}
                 />
 
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">

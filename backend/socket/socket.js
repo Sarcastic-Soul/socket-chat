@@ -1,6 +1,7 @@
 import { Server } from "socket.io";
 import http from "http";
 import express from "express";
+import Conversation from "../models/conversation.model.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -8,29 +9,41 @@ const server = http.createServer(app);
 const userSocketMap = {}; // {userId: socketId}
 
 export const getReceiverSocketId = (receiverId) => {
-	return userSocketMap[receiverId];
+    return userSocketMap[receiverId];
 };
 
 const io = new Server(server, {
-	cors: {
-		origin: ["http://localhost:3000"], // Add production origin here too if needed
-		methods: ["GET", "POST"],
-	},
+    cors: {
+        origin: ["http://localhost:3000"],
+        methods: ["GET", "POST"],
+    },
 });
 
-io.on("connection", (socket) => {
-	console.log("a user connected", socket.id);
+io.on("connection", async (socket) => {
+    console.log("a user connected", socket.id);
 
-	const userId = socket.handshake.query.userId;
-	if (userId) userSocketMap[userId] = socket.id;
+    const userId = socket.handshake.query.userId;
+    if (userId) {
+        userSocketMap[userId] = socket.id;
 
-	io.emit("getOnlineUsers", Object.keys(userSocketMap));
+        // Join user to all their group chat rooms
+        try {
+            const userGroups = await Conversation.find({ isGroupChat: true, participants: userId });
+            userGroups.forEach(group => {
+                socket.join(group._id.toString());
+            });
+        } catch (error) {
+            console.log("Error joining user to group rooms:", error.message);
+        }
+    }
 
-	socket.on("disconnect", () => {
-		console.log("user disconnected", socket.id);
-		delete userSocketMap[userId];
-		io.emit("getOnlineUsers", Object.keys(userSocketMap));
-	});
+    io.emit("getOnlineUsers", Object.keys(userSocketMap));
+
+    socket.on("disconnect", () => {
+        console.log("user disconnected", socket.id);
+        delete userSocketMap[userId];
+        io.emit("getOnlineUsers", Object.keys(userSocketMap));
+    });
 });
 
 export { app, io, server };

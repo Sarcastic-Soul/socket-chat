@@ -6,20 +6,26 @@ const Conversation = ({ conversation, lastIdx }) => {
     const { onlineUsers } = useSocketContext();
 
     const isSelected = selectedConversation?._id === conversation._id;
-    const isOnline = onlineUsers.includes(conversation._id);
+
+    // For 1-on-1 chats, check if the other user is online
+    // For group chats, we don't show an online status for the group itself
+    const isOnline = !conversation.isGroupChat && onlineUsers.includes(conversation._id);
+
+    const displayName = conversation.isGroupChat ? conversation.groupName : conversation.fullName;
+    const displayPic = conversation.profilePic;
 
     return (
         <>
             <div
                 className={`flex gap-3 items-center rounded-lg p-2 cursor-pointer transition
-					hover:bg-white/10 ${isSelected ? "bg-white/20 backdrop-blur-md border border-white/30" : ""}`}
+                    hover:bg-white/10 ${isSelected ? "bg-white/20 backdrop-blur-md border border-white/30" : ""}`}
                 onClick={() => setSelectedConversation(conversation)}
             >
                 {/* Profile Picture with Online Dot */}
                 <div className="relative">
                     <img
-                        src={conversation.profilePic}
-                        alt="user avatar"
+                        src={displayPic}
+                        alt="avatar"
                         className="w-12 h-12 rounded-full object-cover"
                     />
                     {isOnline && (
@@ -29,7 +35,7 @@ const Conversation = ({ conversation, lastIdx }) => {
 
                 {/* Name */}
                 <div className="flex flex-col">
-                    <p className="text-gray-200 font-medium">{conversation.fullName}</p>
+                    <p className="text-gray-200 font-medium">{displayName}</p>
                 </div>
             </div>
 

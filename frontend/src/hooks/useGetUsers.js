@@ -1,21 +1,20 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import useConversation from "../zustand/useConversation";
 
-const useGetConversations = () => {
+const useGetUsers = () => {
 	const [loading, setLoading] = useState(false);
-	const { setConversations } = useConversation();
+	const [users, setUsers] = useState([]);
 
 	useEffect(() => {
-		const getConversations = async () => {
+		const getUsers = async () => {
 			setLoading(true);
 			try {
-				const res = await fetch("/api/users/conversations");
+				const res = await fetch("/api/users");
 				const data = await res.json();
 				if (data.error) {
 					throw new Error(data.error);
 				}
-				setConversations(data);
+				setUsers(data);
 			} catch (error) {
 				toast.error(error.message);
 			} finally {
@@ -23,9 +22,9 @@ const useGetConversations = () => {
 			}
 		};
 
-		getConversations();
-	}, [setConversations]);
+		getUsers();
+	}, []);
 
-	return { loading };
+	return { loading, users };
 };
-export default useGetConversations;
+export default useGetUsers;

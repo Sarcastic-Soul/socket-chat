@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.routes.js";
 import messageRoutes from "./routes/message.routes.js";
 import userRoutes from "./routes/user.routes.js";
+import groupRoutes from "./routes/group.routes.js"; // Import group routes
 import cloudinaryRoutes from './routes/cloudinary.routes.js';
 
 import connectToMongoDB from "./db/connectToMongoDB.js";
@@ -22,6 +23,7 @@ app.use(cookieParser());
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/groups", groupRoutes);
 app.use("/api/cloudinary", cloudinaryRoutes);
 
 if (process.env.NODE_ENV === "production") {

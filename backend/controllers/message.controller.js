@@ -5,41 +5,61 @@ import { getReceiverSocketId, io } from "../socket/socket.js";
 export const sendMessage = async (req, res) => {
     try {
         const { message, mediaUrl, mediaType } = req.body;
-        // console.log("sendMessage body:", req.body);
-        const { id: receiverId } = req.params;
+        const { id: conversationIdOrUserId } = req.params;
         const senderId = req.user._id;
 
-        let conversation = await Conversation.findOne({
-            participants: { $all: [senderId, receiverId] },
-        });
+        let conversation = await Conversation.findById(conversationIdOrUserId);
 
+        // If no conversation is found by ID, it might be a new 1-on-1 chat
         if (!conversation) {
-            conversation = await Conversation.create({
-                participants: [senderId, receiverId],
+            // Check if a 1-on-1 conversation already exists with this user
+            conversation = await Conversation.findOne({
+                isGroupChat: false,
+                participants: { $all: [senderId, conversationIdOrUserId] },
             });
+
+            // If it still doesn't exist, create it
+            if (!conversation) {
+                conversation = await Conversation.create({
+                    participants: [senderId, conversationIdOrUserId],
+                });
+            }
+        }
+
+        if (!conversation.participants.includes(senderId)) {
+            return res.status(403).json({ error: "You are not a participant in this conversation." });
         }
 
         const newMessage = new Message({
             senderId,
-            receiverId,
+            receiverId: conversation._id, // Store the actual conversation ID
             message: message || "",
             mediaUrl: mediaUrl || null,
             mediaType: mediaType || "text",
         });
 
-        if (newMessage) {
-            conversation.messages.push(newMessage._id);
-        }
+        conversation.messages.push(newMessage._id);
 
-        // this will run in parallel
+        // Run in parallel
         await Promise.all([conversation.save(), newMessage.save()]);
 
-        const receiverSocketId = getReceiverSocketId(receiverId);
-        if (receiverSocketId) {
-            io.to(receiverSocketId).emit("newMessage", newMessage);
+        // Populate sender details for the socket payload
+        const populatedMessage = await newMessage.populate("senderId", "fullName profilePic");
+
+        // Socket IO Logic
+        if (conversation.isGroupChat) {
+            // Emit to the entire group room
+            io.to(conversation._id.toString()).emit("newMessage", populatedMessage);
+        } else {
+            // Find the specific receiver for a 1-on-1 chat
+            const receiverId = conversation.participants.find(p => p.toString() !== senderId.toString());
+            const receiverSocketId = getReceiverSocketId(receiverId);
+            if (receiverSocketId) {
+                io.to(receiverSocketId).emit("newMessage", populatedMessage);
+            }
         }
 
-        res.status(201).json(newMessage);
+        res.status(201).json(populatedMessage);
     } catch (error) {
         console.log("Error in sendMessage controller: ", error.message);
         res.status(500).json({ error: "Internal server error" });
@@ -48,15 +68,15 @@ export const sendMessage = async (req, res) => {
 
 export const getMessages = async (req, res) => {
     try {
-        const { id: userToChatId } = req.params;
+        const { id: conversationId } = req.params;
         const { before, limit = 50 } = req.query;
         const senderId = req.user._id;
 
-        const conversation = await Conversation.findOne({
-            participants: { $all: [senderId, userToChatId] },
-        });
+        const conversation = await Conversation.findById(conversationId);
 
-        if (!conversation) return res.status(200).json([]);
+        if (!conversation || !conversation.participants.includes(senderId)) {
+            return res.status(404).json({ error: "Conversation not found or you are not a member." });
+        }
 
         let messageQuery = { _id: { $in: conversation.messages } };
 

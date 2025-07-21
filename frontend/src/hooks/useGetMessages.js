@@ -11,10 +11,15 @@ const useGetMessages = () => {
 
     const conversationId = selectedConversation?._id;
 
-    // Initial fetch for a conversation
+    // A more robust check: a real conversation will have messages or be a group chat,
+    // a temporary one is just a placeholder with the participant's ID.
+    const isRealConversation = selectedConversation && (selectedConversation.isGroupChat || conversationId !== selectedConversation.participantId);
+
     const getMessages = useCallback(async () => {
-        if (!conversationId) {
+        if (!conversationId || !isRealConversation) {
             setMessages([]);
+            setLoading(false);
+            setInitialLoad(false);
             return;
         }
 
@@ -22,35 +27,13 @@ const useGetMessages = () => {
         setInitialLoad(true);
 
         try {
-            // 1. Try to load from cache first
             const cached = await getCachedMessages(conversationId);
             if (cached && cached.length > 0) {
                 setMessages(cached);
                 setHasMore(cached.length % 50 === 0);
-                setInitialLoad(false);
-
-                // Optional: Fetch fresh data in background and update cache
-                // This ensures we have the latest reactions/updates
-                try {
-                    const res = await fetch(`/api/messages/${conversationId}?limit=50`);
-                    if (res.ok) {
-                        const freshData = await res.json();
-                        if (freshData && !freshData.error) {
-                            const chronologicalMessages = freshData.reverse();
-                            setMessages(chronologicalMessages);
-                            await setCachedMessages(conversationId, chronologicalMessages);
-                        }
-                    }
-                } catch (backgroundError) {
-                    console.log("Background fetch failed, using cached data");
-                }
             } else {
-                // 2. Fetch from API if cache is empty
                 const res = await fetch(`/api/messages/${conversationId}?limit=50`);
-                if (!res.ok) {
-                    throw new Error(`HTTP error! status: ${res.status}`);
-                }
-
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
                 const data = await res.json();
                 if (data.error) throw new Error(data.error);
 
@@ -67,23 +50,20 @@ const useGetMessages = () => {
             setLoading(false);
             setInitialLoad(false);
         }
-    }, [conversationId, setMessages]);
+    }, [conversationId, setMessages, isRealConversation]);
 
-    // Reset and fetch when conversation changes
     useEffect(() => {
-        if (conversationId) {
-            setMessages([]); // Clear messages immediately when conversation changes
-            setHasMore(true);
+        // This effect now correctly handles new chats by not calling getMessages for them.
+        if (selectedConversation?._id) {
             getMessages();
         } else {
             setMessages([]);
-            setHasMore(true);
         }
-    }, [conversationId, getMessages]);
+    }, [selectedConversation?._id, getMessages]);
 
-    // Fetch older messages for pagination
+
     const loadOlderMessages = useCallback(async () => {
-        if (loading || !conversationId || messages.length === 0) return;
+        if (loading || !isRealConversation || messages.length === 0) return;
 
         setLoading(true);
         try {
@@ -99,15 +79,12 @@ const useGetMessages = () => {
 
             if (data.length > 0) {
                 const chronologicalOlderMessages = data.reverse();
-
-                // Filter out duplicates based on message ID
                 const existingIds = new Set(messages.map(msg => msg._id));
                 const newUniqueOlderMessages = chronologicalOlderMessages.filter(
                     (oldMsg) => !existingIds.has(oldMsg._id)
                 );
 
                 if (newUniqueOlderMessages.length > 0) {
-                    // Prepend older messages to state and cache
                     setMessages((prev) => [...newUniqueOlderMessages, ...prev]);
                     await addOlderMessages(conversationId, newUniqueOlderMessages);
                 }
@@ -122,11 +99,12 @@ const useGetMessages = () => {
         } finally {
             setLoading(false);
         }
-    }, [conversationId, messages, loading, setMessages]);
+    }, [conversationId, messages, loading, setMessages, isRealConversation]);
+
 
     return {
         messages,
-        loading: loading && initialLoad, // Only show loading on initial load
+        loading: loading && initialLoad,
         hasMore,
         loadOlderMessages,
         isLoadingMore: loading && !initialLoad

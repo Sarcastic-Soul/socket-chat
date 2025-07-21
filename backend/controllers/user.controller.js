@@ -1,7 +1,29 @@
 import User from "../models/user.model.js";
 import Conversation from "../models/conversation.model.js";
 
-// This will fetch existing conversations (1-on-1 and group) for the sidebar
+export const getUsersForNewChat = async (req, res) => {
+    try {
+        const loggedInUserId = req.user._id;
+
+        const existingConversations = await Conversation.find({
+            isGroupChat: false,
+            participants: loggedInUserId,
+        }).select("participants");
+
+        const existingParticipantIds = existingConversations.flatMap(conv =>
+            conv.participants.filter(p => !p.equals(loggedInUserId))
+        );
+
+        const idsToExclude = [loggedInUserId, ...existingParticipantIds];
+
+        const users = await User.find({ _id: { $nin: idsToExclude } }).select("-password");
+
+        res.status(200).json(users);
+    } catch (error) {
+        console.error("Error in getUsersForNewChat: ", error.message);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
 export const getConversations = async (req, res) => {
     try {
         const loggedInUserId = req.user._id;
@@ -11,7 +33,6 @@ export const getConversations = async (req, res) => {
             select: "fullName profilePic",
         });
 
-        // Use reduce to filter and map in one pass, removing any malformed conversations
         const formattedConversations = conversations.reduce((acc, conv) => {
             if (conv.isGroupChat) {
                 acc.push({
@@ -25,7 +46,6 @@ export const getConversations = async (req, res) => {
             } else {
                 const otherParticipant = conv.participants.find(p => p._id.toString() !== loggedInUserId.toString());
 
-                // Gracefully handle cases where a 1-on-1 chat might be missing the other participant
                 if (otherParticipant) {
                     acc.push({
                         _id: conv._id,
@@ -46,10 +66,13 @@ export const getConversations = async (req, res) => {
     }
 };
 
+
 export const getUsersForSidebar = async (req, res) => {
     try {
         const loggedInUserId = req.user._id;
+
         const filteredUsers = await User.find({ _id: { $ne: loggedInUserId } }).select("-password");
+
         res.status(200).json(filteredUsers);
     } catch (error) {
         console.error("Error in getUsersForSidebar: ", error.message);
@@ -72,6 +95,7 @@ export const getUserById = async (req, res) => {
         res.status(500).json({ error: "Internal server error" });
     }
 };
+
 
 export const updateUserProfilePic = async (req, res) => {
     try {

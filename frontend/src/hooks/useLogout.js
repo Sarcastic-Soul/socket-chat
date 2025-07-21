@@ -1,32 +1,43 @@
 import { useState } from "react";
 import { useAuthContext } from "../context/AuthContext";
 import toast from "react-hot-toast";
+import { clearAllMessages } from "../utils/messageCacheDB";
 
 const useLogout = () => {
-	const [loading, setLoading] = useState(false);
-	const { setAuthUser } = useAuthContext();
+    const [loading, setLoading] = useState(false);
+    const { setAuthUser } = useAuthContext();
 
-	const logout = async () => {
-		setLoading(true);
-		try {
-			const res = await fetch("/api/auth/logout", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-			});
-			const data = await res.json();
-			if (data.error) {
-				throw new Error(data.error);
-			}
+    const logout = async () => {
+        setLoading(true);
+        try {
+            await fetch("/api/auth/logout", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+            });
 
-			localStorage.removeItem("chat-user");
-			setAuthUser(null);
-		} catch (error) {
-			toast.error(error.message);
-		} finally {
-			setLoading(false);
-		}
-	};
+            try {
+                await Promise.race([
+                    clearAllMessages(),
+                    new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error('IndexedDB clear timeout')), 5000)
+                    )
+                ]);
+            } catch (dbError) {
+                console.warn('Failed to clear IndexedDB, trying alternative method:', dbError);
+            }
 
-	return { loading, logout };
+            localStorage.removeItem("chat-user");
+            setAuthUser(null);
+
+        } catch (error) {
+            toast.error(error.message);
+            localStorage.removeItem("chat-user");
+            setAuthUser(null);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return { loading, logout };
 };
 export default useLogout;

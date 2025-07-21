@@ -8,21 +8,20 @@ export const sendMessage = async (req, res) => {
         const { id: conversationIdOrUserId } = req.params;
         const senderId = req.user._id;
 
+        let isNewConversation = false;
         let conversation = await Conversation.findById(conversationIdOrUserId);
 
-        // If no conversation is found by ID, it might be a new 1-on-1 chat
         if (!conversation) {
-            // Check if a 1-on-1 conversation already exists with this user
             conversation = await Conversation.findOne({
                 isGroupChat: false,
                 participants: { $all: [senderId, conversationIdOrUserId] },
             });
 
-            // If it still doesn't exist, create it
             if (!conversation) {
                 conversation = await Conversation.create({
                     participants: [senderId, conversationIdOrUserId],
                 });
+                isNewConversation = true;
             }
         }
 
@@ -32,7 +31,7 @@ export const sendMessage = async (req, res) => {
 
         const newMessage = new Message({
             senderId,
-            receiverId: conversation._id, // Store the actual conversation ID
+            receiverId: conversation._id,
             message: message || "",
             mediaUrl: mediaUrl || null,
             mediaType: mediaType || "text",
@@ -40,18 +39,13 @@ export const sendMessage = async (req, res) => {
 
         conversation.messages.push(newMessage._id);
 
-        // Run in parallel
         await Promise.all([conversation.save(), newMessage.save()]);
 
-        // Populate sender details for the socket payload
         const populatedMessage = await newMessage.populate("senderId", "fullName profilePic");
 
-        // Socket IO Logic
         if (conversation.isGroupChat) {
-            // Emit to the entire group room
             io.to(conversation._id.toString()).emit("newMessage", populatedMessage);
         } else {
-            // Find the specific receiver for a 1-on-1 chat
             const receiverId = conversation.participants.find(p => p.toString() !== senderId.toString());
             const receiverSocketId = getReceiverSocketId(receiverId);
             if (receiverSocketId) {
@@ -59,7 +53,13 @@ export const sendMessage = async (req, res) => {
             }
         }
 
-        res.status(201).json(populatedMessage);
+        if (isNewConversation) {
+            const populatedConv = await conversation.populate("participants", "fullName profilePic");
+            return res.status(201).json({ newMessage: populatedMessage, newConversation: populatedConv });
+        }
+
+        res.status(201).json({ newMessage: populatedMessage });
+
     } catch (error) {
         console.log("Error in sendMessage controller: ", error.message);
         res.status(500).json({ error: "Internal server error" });

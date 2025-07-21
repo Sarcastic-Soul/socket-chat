@@ -11,17 +11,16 @@ const useConversation = create((set, get) => ({
     conversations: [],
     setConversations: (conversations) => set({ conversations }),
 
+    searchTerm: "", // Add searchTerm state
+    setSearchTerm: (term) => set({ searchTerm: term }), // Add setter for searchTerm
+
     addMessage: (message) => {
         const { selectedConversation } = get();
-
         set((state) => {
             const messageExists = state.messages.some(msg => msg._id === message._id);
-            if (messageExists) {
-                return state;
-            }
+            if (messageExists) return state;
             return { messages: [...state.messages, message] };
         });
-
         if (selectedConversation?._id) {
             addMessageToCache(selectedConversation._id, message);
         }
@@ -29,13 +28,11 @@ const useConversation = create((set, get) => ({
 
     updateMessage: (updatedMessage) => {
         const { selectedConversation } = get();
-
         set((state) => ({
             messages: state.messages.map(msg =>
                 msg._id === updatedMessage._id ? updatedMessage : msg
             )
         }));
-
         if (selectedConversation?._id) {
             updateMessageInCache(selectedConversation._id, updatedMessage);
         }

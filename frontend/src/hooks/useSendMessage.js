@@ -1,14 +1,13 @@
-// hooks/useSendMessage.js
-
 import { useState } from "react";
 import useConversation from "../zustand/useConversation";
 import toast from "react-hot-toast";
+import { useAuthContext } from "../context/AuthContext";
 
 const useSendMessage = () => {
     const [loading, setLoading] = useState(false);
-    const { messages, setMessages, selectedConversation } = useConversation();
+    const { authUser } = useAuthContext();
+    const { messages, setMessages, selectedConversation, setConversations, conversations, setSelectedConversation } = useConversation();
 
-    // Modify sendMessage to accept mediaUrl and mediaType
     const sendMessage = async (messageText = "", media = null) => {
         setLoading(true);
         try {
@@ -34,7 +33,23 @@ const useSendMessage = () => {
                 throw new Error(data.error);
             }
 
-            setMessages([...messages, data]);
+            setMessages([...messages, data.newMessage]);
+
+            if (data.newConversation) {
+                const otherParticipant = data.newConversation.participants.find(p => p._id !== authUser._id);
+
+                const formattedNewConversation = {
+                    _id: data.newConversation._id,
+                    isGroupChat: false,
+                    fullName: otherParticipant.fullName,
+                    profilePic: otherParticipant.profilePic,
+                    participantId: otherParticipant._id
+                };
+
+                setConversations([formattedNewConversation, ...conversations]);
+                setSelectedConversation(formattedNewConversation);
+            }
+
         } catch (error) {
             console.error("Error sending message:", error.message);
             toast.error(error.message);

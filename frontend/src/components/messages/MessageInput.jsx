@@ -1,9 +1,7 @@
-// components/messages/MessageInput.jsx
-
 import { useState, useRef } from "react";
 import { BsSend } from "react-icons/bs";
 import { BsEmojiSmile } from "react-icons/bs";
-import { FaPaperclip, FaTimes } from "react-icons/fa"; // Import new icons
+import { FaPaperclip, FaTimes } from "react-icons/fa";
 import EmojiPicker from "emoji-picker-react";
 import useSendMessage from "../../hooks/useSendMessage";
 import toast from "react-hot-toast";
@@ -13,15 +11,15 @@ const MessageInput = () => {
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
     const [filePreview, setFilePreview] = useState(null);
-    const [uploading, setUploading] = useState(false); // New state for upload loading
+    const [uploading, setUploading] = useState(false);
 
     const { loading: isSendingMessage, sendMessage } = useSendMessage();
-    const fileInputRef = useRef(null); // Ref for file input
+    const fileInputRef = useRef(null);
+    const messageInputRef = useRef(null); // Ref for the text input
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            // Basic validation
             if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) {
                 toast.error("Only images and videos are allowed.");
                 setSelectedFile(null);
@@ -57,13 +55,11 @@ const MessageInput = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // If no message text and no file, do nothing
         if (!message.trim() && !selectedFile) {
             toast.error("Please enter a message or select a file.");
             return;
         }
 
-        // Prevent sending multiple times or while uploading
         if (isSendingMessage || uploading) {
             return;
         }
@@ -114,6 +110,10 @@ const MessageInput = () => {
 
             setMessage("");
             removeSelectedFile();
+
+            // FIX: Focus the input after sending a message
+            messageInputRef.current?.focus();
+
         } catch (error) {
             console.error("Error sending media/message:", error.message);
             toast.error(error.message || "Failed to send message.");
@@ -125,7 +125,6 @@ const MessageInput = () => {
     return (
         <form className="px-4 my-3" onSubmit={handleSubmit}>
             <div className="w-full relative">
-                {/* File preview section */}
                 {filePreview && (
                     <div className="mb-2 p-2 rounded-lg bg-gray-700 relative">
                         {selectedFile.type.startsWith("image/") && (
@@ -149,6 +148,7 @@ const MessageInput = () => {
                 )}
 
                 <input
+                    ref={messageInputRef} // Attach the ref to the input
                     type="text"
                     placeholder={selectedFile ? "Add a caption (optional)" : "Send a message"}
                     value={message}
@@ -158,25 +158,22 @@ const MessageInput = () => {
                 />
 
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                    {/* Hidden file input */}
                     <input
                         type="file"
                         ref={fileInputRef}
                         onChange={handleFileChange}
                         className="hidden"
-                        accept="image/*,video/*" // Accept only image and video files
+                        accept="image/*,video/*"
                     />
-                    {/* Paperclip icon to trigger file input */}
                     <button
                         type="button"
                         className="p-2 text-gray-400 hover:text-white transition"
-                        onClick={() => fileInputRef.current.click()} // Click hidden input
+                        onClick={() => fileInputRef.current.click()}
                         title="Attach media"
                         disabled={uploading}
                     >
                         <FaPaperclip className="w-5 h-5" />
                     </button>
-
                     <button
                         type="button"
                         className="p-2 text-gray-400 hover:text-white transition"
@@ -188,7 +185,7 @@ const MessageInput = () => {
                     <button
                         type="submit"
                         className="p-2 text-gray-400 hover:text-white transition"
-                        disabled={isSendingMessage || uploading} // Disable while sending or uploading
+                        disabled={isSendingMessage || uploading}
                     >
                         {(isSendingMessage || uploading) ? (
                             <div className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin" />

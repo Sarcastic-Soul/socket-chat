@@ -1,12 +1,13 @@
 import express from "express";
 import protectRoute from "../middleware/protectRoute.js";
-import { getUserById, getConversations, getUsersForSidebar, updateUserProfilePic } from "../controllers/user.controller.js";
+import { getUserById, getConversations, getUsersForSidebar, updateUserProfilePic, getUsersForNewChat } from "../controllers/user.controller.js";
 
 const router = express.Router();
 
-router.get("/conversations", protectRoute, getConversations);
 router.get("/", protectRoute, getUsersForSidebar);
-router.get("/:id", protectRoute, getUserById);
+router.get("/new", protectRoute, getUsersForNewChat);
+router.get("/conversations", protectRoute, getConversations);
 router.put("/update-pic", protectRoute, updateUserProfilePic);
+router.get("/:id", protectRoute, getUserById);
 
 export default router;

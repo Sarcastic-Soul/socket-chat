@@ -1,9 +1,18 @@
-import { openDB } from 'idb';
+import { openDB, deleteDB } from 'idb';
 
-const dbPromise = openDB('chat-db', 1, {
+const DB_NAME = 'chat-db';
+
+let dbInstance = null;
+
+const dbPromise = openDB(DB_NAME, 1, {
     upgrade(db) {
-        db.createObjectStore('messages', { keyPath: 'id' }); // id = conversationId
+        if (!db.objectStoreNames.contains('messages')) {
+            db.createObjectStore('messages', { keyPath: 'id' });
+        }
     },
+}).then(db => {
+    dbInstance = db;
+    return db;
 });
 
 /**
@@ -36,10 +45,7 @@ export const addOlderMessages = async (conversationId, olderMessages) => {
     const store = tx.objectStore('messages');
     const entry = await store.get(conversationId);
 
-    // Create a Set of existing message IDs for efficient lookup
     const existingMessageIds = new Set(entry?.messages.map(msg => msg._id));
-
-    // Filter out older messages that already exist
     const uniqueOlderMessages = olderMessages.filter(
         (oldMsg) => !existingMessageIds.has(oldMsg._id)
     );
@@ -64,7 +70,6 @@ export const addMessageToCache = async (conversationId, newMessage) => {
     const store = tx.objectStore('messages');
     const entry = await store.get(conversationId);
 
-    // Ensure we don't add duplicate messages
     const messageExists = entry?.messages.some(msg => msg._id === newMessage._id);
     if (messageExists) {
         await tx.done;
@@ -83,7 +88,7 @@ export const addMessageToCache = async (conversationId, newMessage) => {
 };
 
 /**
- * NEW: Updates a specific message in the cache (for reactions, edits, etc.)
+ * Updates a specific message in the cache (for reactions, edits, etc.)
  */
 export const updateMessageInCache = async (conversationId, updatedMessage) => {
     const db = await dbPromise;
@@ -96,7 +101,6 @@ export const updateMessageInCache = async (conversationId, updatedMessage) => {
         return;
     }
 
-    // Update the specific message in the cache
     const updatedMessages = entry.messages.map(msg =>
         msg._id === updatedMessage._id ? updatedMessage : msg
     );
@@ -116,4 +120,24 @@ export const updateMessageInCache = async (conversationId, updatedMessage) => {
 export const getCachedMessage = async (conversationId, messageId) => {
     const messages = await getCachedMessages(conversationId);
     return messages.find(msg => msg._id === messageId);
+};
+
+export const clearAllMessages = async () => {
+    try {
+        // Close existing database connection if it exists
+        if (dbInstance) {
+            dbInstance.close();
+            dbInstance = null;
+        }
+
+        // Wait a bit for any pending operations to complete
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // Delete the database
+        await deleteDB(DB_NAME);
+        console.log("IndexedDB cleared successfully.");
+    } catch (error) {
+        console.error("Failed to clear IndexedDB:", error);
+        throw error;
+    }
 };

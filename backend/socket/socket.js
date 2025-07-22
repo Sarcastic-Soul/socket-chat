@@ -6,16 +6,23 @@ import Conversation from "../models/conversation.model.js";
 const app = express();
 const server = http.createServer(app);
 
-const userSocketMap = {}; // {userId: socketId}
+const userSocketMap = {};
 
 export const getReceiverSocketId = (receiverId) => {
     return userSocketMap[receiverId];
 };
 
+const allowedOrigins = [
+    "https://socket-chat-nine-tau.vercel.app",
+    "http://localhost:3000"
+];
+
 const io = new Server(server, {
     cors: {
-        origin: ["http://localhost:3000", "https://socket-chat-nine-tau.vercel.app"],
-        methods: ["GET", "POST", "PUT", "DELETE"],
+        origin: allowedOrigins,
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        credentials: true,
+        allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
     },
 });
 

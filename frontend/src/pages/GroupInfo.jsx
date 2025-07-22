@@ -24,7 +24,7 @@ const GroupInfo = () => {
         if (!groupId) return;
         setLoading(true);
         try {
-            const res = await fetch(`/api/groups/${groupId}`);
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/groups/${groupId}`);
             const data = await res.json();
             if (data.error) throw new Error(data.error);
             setGroup(data);
@@ -66,7 +66,7 @@ const GroupInfo = () => {
         setIsUploading(true);
         const toastId = toast.loading("Uploading icon...");
         try {
-            const signatureRes = await fetch('/api/cloudinary/signature/group-icon');
+            const signatureRes = await fetch(`${import.meta.env.VITE_API_URL}/api/cloudinary/signature/group-icon`);
             const signatureData = await signatureRes.json();
             if (!signatureRes.ok) throw new Error(signatureData.error || "Failed to get upload signature.");
 
@@ -83,7 +83,7 @@ const GroupInfo = () => {
             if (!uploadRes.ok) throw new Error(uploadData.error.message || "Cloudinary upload failed.");
 
             await handleApiResponse(
-                () => fetch(`/api/groups/${groupId}/update`, {
+                () => fetch(`${import.meta.env.VITE_API_URL}/api/groups/${groupId}/update`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ groupIcon: uploadData.secure_url }),
@@ -108,7 +108,7 @@ const GroupInfo = () => {
             return;
         }
         await handleApiResponse(
-            () => fetch(`/api/groups/${groupId}/update`, {
+            () => fetch(`${import.meta.env.VITE_API_URL}/api/groups/${groupId}/update`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ groupName }),
@@ -123,7 +123,7 @@ const GroupInfo = () => {
             return toast.error("You are the last admin. Make someone else an admin before leaving.");
         }
         await handleApiResponse(
-            () => fetch(`/api/groups/${groupId}/participants/remove`, {
+            () => fetch(`${import.meta.env.VITE_API_URL}/api/groups/${groupId}/participants/remove`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userIdToRemove }),
@@ -134,7 +134,7 @@ const GroupInfo = () => {
 
     const handleMakeAdmin = async (userIdToMakeAdmin) => {
         await handleApiResponse(
-            () => fetch(`/api/groups/${groupId}/admins/add`, {
+            () => fetch(`${import.meta.env.VITE_API_URL}/api/groups/${groupId}/admins/add`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userIdToMakeAdmin }),
@@ -146,7 +146,7 @@ const GroupInfo = () => {
     const handleDeleteGroup = async () => {
         if (!window.confirm("Are you sure you want to delete this group? This action cannot be undone.")) return;
         try {
-            await fetch(`/api/groups/${groupId}/delete`, {
+            await fetch(`${import.meta.env.VITE_API_URL}/api/groups/${groupId}/delete`, {
                 method: 'DELETE'
             });
             toast.success("Group deleted!");

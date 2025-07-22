@@ -20,7 +20,7 @@ const useSendMessage = () => {
                 body.mediaType = media.type;
             }
 
-            const res = await fetch(`/api/messages/send/${selectedConversation._id}`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/messages/send/${selectedConversation._id}`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

@@ -13,7 +13,7 @@ const CreateGroupModal = ({ onClose }) => {
         const fetchUsers = async () => {
             setLoading(true);
             try {
-                const res = await fetch("/api/users");
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users`);
                 const data = await res.json();
                 if (data.error) throw new Error(data.error);
                 setAllUsers(data);
@@ -41,7 +41,7 @@ const CreateGroupModal = ({ onClose }) => {
         }
 
         try {
-            const res = await fetch("/api/groups/create", {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/groups/create`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

@@ -33,7 +33,7 @@ const ProfilePage = () => {
         const toastId = toast.loading("Uploading image...");
 
         try {
-            const signatureRes = await fetch('/api/cloudinary/signature/profile-pic');
+            const signatureRes = await fetch(`${import.meta.env.VITE_API_URL}/api/cloudinary/signature/profile-pic`);
             const signatureData = await signatureRes.json();
             if (!signatureRes.ok) throw new Error(signatureData.error || "Failed to get upload signature.");
             const { signature, timestamp, cloudName, apiKey, folder } = signatureData;
@@ -51,7 +51,7 @@ const ProfilePage = () => {
 
             toast.loading("Updating profile...", { id: toastId });
 
-            const dbUpdateRes = await fetch('/api/users/update-pic', {
+            const dbUpdateRes = await fetch(`${import.meta.env.VITE_API_URL}/api/users/update-pic`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ profilePic: uploadData.secure_url }),

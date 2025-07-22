@@ -44,7 +44,7 @@ const Message = ({ message }) => {
         setAnimatingReaction(reaction);
 
         try {
-            const res = await fetch(`/api/messages/react/${message._id}`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/messages/react/${message._id}`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

@@ -32,7 +32,7 @@ const useGetMessages = () => {
                 setMessages(cached);
                 setHasMore(cached.length % 50 === 0);
             } else {
-                const res = await fetch(`/api/messages/${conversationId}?limit=50`);
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/messages/${conversationId}?limit=50`);
                 if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
                 const data = await res.json();
                 if (data.error) throw new Error(data.error);
@@ -68,7 +68,7 @@ const useGetMessages = () => {
         setLoading(true);
         try {
             const oldestMessageId = messages[0]?._id;
-            const res = await fetch(`/api/messages/${conversationId}?before=${oldestMessageId}&limit=50`);
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/messages/${conversationId}?before=${oldestMessageId}&limit=50`);
 
             if (!res.ok) {
                 throw new Error(`HTTP error! status: ${res.status}`);

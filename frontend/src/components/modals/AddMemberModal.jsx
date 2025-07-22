@@ -18,7 +18,7 @@ const AddMemberModal = ({ group, onClose, onMemberAdded }) => {
 
     const handleAddMember = async (userIdToAdd) => {
         try {
-            const res = await fetch(`/api/groups/${group._id}/participants/add`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/groups/${group._id}/participants/add`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userIdToAdd }),

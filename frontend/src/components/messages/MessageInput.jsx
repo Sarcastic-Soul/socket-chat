@@ -69,7 +69,7 @@ const MessageInput = () => {
 
         try {
             if (selectedFile) {
-                const signatureRes = await fetch("/api/cloudinary/signature");
+                const signatureRes = await fetch(`${import.meta.env.VITE_API_URL}/api/cloudinary/signature`);
                 if (!signatureRes.ok) {
                     throw new Error(`Failed to get Cloudinary signature: ${signatureRes.statusText}`);
                 }

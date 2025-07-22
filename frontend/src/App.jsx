@@ -1,5 +1,4 @@
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
@@ -12,12 +11,6 @@ import GroupInfo from "./pages/GroupInfo";
 function App() {
     const { authUser } = useAuthContext();
     const navigate = useNavigate();
-
-    useEffect(() => {
-        if (authUser === null) {
-            navigate("/login");
-        }
-    }, [authUser, navigate]);
 
     return (
         <div className='p-4 h-screen flex items-center justify-center'>

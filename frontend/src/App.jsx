@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
@@ -10,7 +10,6 @@ import GroupInfo from "./pages/GroupInfo";
 
 function App() {
     const { authUser } = useAuthContext();
-    const navigate = useNavigate();
 
     return (
         <div className='p-4 h-screen flex items-center justify-center'>

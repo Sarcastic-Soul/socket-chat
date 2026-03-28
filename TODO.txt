@@ -7,42 +7,10 @@ Good idea—but do it *properly*:
 * Keys managed client-side
 ---
 
-## 3. 🧠 Fix Caching (Make it Smart)
-
-Right now it's “broken” → turn it into a feature:
-
-* Use **IndexedDB (idb)** properly:
-
-  * Cache conversations per user
-  * Store last message timestamp
-* Sync strategy:
-
-  * Fetch only *new messages* (delta sync)
-* Add:
-
-  * Offline support (view old chats without internet)
-
-## 10. 🧾 File Handling Upgrade
-
-* File preview
-* Upload progress
-* File size limits
-* Drag & drop uploads
-
----
-
 ## 12. 📡 Rate Limiting + Abuse Protection
 
 * Limit messages/sec per user
 * Prevent spam/flood attacks
-
----
-
-## 13. 🧠 Smart Features (Optional but impressive)
-
-* Profanity filter
-
----
 
 
 Future Ideas:

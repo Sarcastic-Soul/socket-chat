@@ -26,24 +26,6 @@ const MessageContainer = () => {
         return () => setSelectedConversation(null);
     }, [setSelectedConversation]);
 
-    useEffect(() => {
-        const markAsRead = async () => {
-            if (selectedConversation && messages.length > 0) {
-                try {
-                    await fetch(
-                        `${import.meta.env.VITE_API_URL || ""}/api/messages/read/${selectedConversation._id}`,
-                        {
-                            method: "POST",
-                        },
-                    );
-                } catch (error) {
-                    console.error("Error marking messages as read:", error);
-                }
-            }
-        };
-        markAsRead();
-    }, [selectedConversation, messages]);
-
     const isOnline =
         selectedConversation &&
         !selectedConversation.isGroupChat &&

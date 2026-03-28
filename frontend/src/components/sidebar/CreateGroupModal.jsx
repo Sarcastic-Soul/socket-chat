@@ -79,8 +79,6 @@ const CreateGroupModal = ({ onClose }) => {
             const data = await res.json();
             if (data.error) throw new Error(data.error);
 
-            addConversation(data);
-
             notifications.show({
                 message: "Group created successfully!",
                 color: "green",

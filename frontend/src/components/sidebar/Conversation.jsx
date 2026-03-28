@@ -10,7 +10,12 @@ import {
 } from "@mantine/core";
 
 const Conversation = ({ conversation, lastIdx }) => {
-    const { selectedConversation, setSelectedConversation } = useConversation();
+    const {
+        selectedConversation,
+        setSelectedConversation,
+        unreadMessages,
+        clearUnreadMessage,
+    } = useConversation();
     const { onlineUsers } = useSocketContext();
 
     const isSelected = selectedConversation?._id === conversation._id;
@@ -23,6 +28,19 @@ const Conversation = ({ conversation, lastIdx }) => {
         ? conversation.groupName
         : conversation.fullName;
     const displayPic = conversation.profilePic;
+
+    const hasUnread =
+        unreadMessages[conversation._id] ||
+        (conversation.participantId &&
+            unreadMessages[conversation.participantId]);
+
+    const handleSelect = () => {
+        setSelectedConversation(conversation);
+        clearUnreadMessage(conversation._id);
+        if (conversation.participantId) {
+            clearUnreadMessage(conversation.participantId);
+        }
+    };
 
     return (
         <>
@@ -40,9 +58,9 @@ const Conversation = ({ conversation, lastIdx }) => {
                             : "var(--mantine-color-default-hover)",
                     },
                 })}
-                onClick={() => setSelectedConversation(conversation)}
+                onClick={handleSelect}
             >
-                <Group gap="sm">
+                <Group gap="sm" wrap="nowrap">
                     <Indicator
                         inline
                         size={12}
@@ -55,9 +73,31 @@ const Conversation = ({ conversation, lastIdx }) => {
                         <Avatar src={displayPic} radius="xl" size="md" />
                     </Indicator>
 
-                    <Text size="sm" fw={500}>
+                    <Text
+                        size="sm"
+                        fw={500}
+                        style={{
+                            flex: 1,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                        }}
+                    >
                         {displayName}
                     </Text>
+
+                    {hasUnread && (
+                        <div
+                            style={{
+                                width: 10,
+                                height: 10,
+                                borderRadius: "50%",
+                                backgroundColor:
+                                    "var(--mantine-color-blue-filled)",
+                                flexShrink: 0,
+                            }}
+                        />
+                    )}
                 </Group>
             </UnstyledButton>
 

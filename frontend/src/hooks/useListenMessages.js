@@ -10,6 +10,7 @@ const useListenMessages = () => {
         updateMessage,
         selectedConversation,
         markMessagesRead,
+        setUnreadMessage,
     } = useConversation();
 
     useEffect(() => {
@@ -25,6 +26,10 @@ const useListenMessages = () => {
                 sound.play();
 
                 addMessage(newMessage);
+            } else {
+                setUnreadMessage(newMessage.receiverId);
+                const sound = new Audio(notificationSound);
+                sound.play();
             }
         };
 
@@ -66,6 +71,7 @@ const useListenMessages = () => {
         addMessage,
         updateMessage,
         markMessagesRead,
+        setUnreadMessage,
         selectedConversation,
     ]);
 };

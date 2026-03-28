@@ -19,8 +19,20 @@ const useConversation = create((set, get) => ({
             conversations: [conversation, ...state.conversations],
         })),
 
-    searchTerm: "", // Add searchTerm state
-    setSearchTerm: (term) => set({ searchTerm: term }), // Add setter for searchTerm
+    searchTerm: "",
+    setSearchTerm: (term) => set({ searchTerm: term }),
+
+    unreadMessages: {},
+    setUnreadMessage: (conversationId) =>
+        set((state) => ({
+            unreadMessages: { ...state.unreadMessages, [conversationId]: true },
+        })),
+    clearUnreadMessage: (conversationId) =>
+        set((state) => {
+            const newUnread = { ...state.unreadMessages };
+            delete newUnread[conversationId];
+            return { unreadMessages: newUnread };
+        }),
 
     addMessage: (message) => {
         const { selectedConversation } = get();

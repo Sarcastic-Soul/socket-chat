@@ -21,7 +21,7 @@ const Conversation = ({ conversation, lastIdx }) => {
     const isSelected = selectedConversation?._id === conversation._id;
     const isOnline =
         !conversation.isGroupChat &&
-        conversation.isPublic !== false &&
+        conversation.isPublic &&
         onlineUsers.includes(conversation.participantId);
 
     const displayName = conversation.isGroupChat

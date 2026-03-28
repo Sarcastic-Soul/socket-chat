@@ -262,7 +262,7 @@ const Profile = () => {
                                                 size="md"
                                                 radius="xl"
                                                 color={
-                                                    authUser?.isPublic !== false
+                                                    authUser?.isPublic
                                                         ? "green"
                                                         : "gray"
                                                 }
@@ -288,7 +288,7 @@ const Profile = () => {
                                         </Group>
                                         <Switch
                                             checked={
-                                                authUser?.isPublic !== false
+                                                authUser?.isPublic
                                             }
                                             onChange={handlePrivacyToggle}
                                             disabled={isUpdatingPrivacy}

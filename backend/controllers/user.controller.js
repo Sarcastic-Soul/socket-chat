@@ -18,7 +18,7 @@ export const getUsersForNewChat = async (req, res) => {
 
         const users = await User.find({
             _id: { $nin: idsToExclude },
-            isPublic: { $ne: false },
+            isPublic: true,
         }).select("-password");
 
         res.status(200).json(users);
@@ -63,7 +63,7 @@ export const getConversations = async (req, res) => {
                         profilePic: otherParticipant.profilePic,
                         participantId: otherParticipant._id,
                         username: otherParticipant.username,
-                        isPublic: otherParticipant.isPublic
+                        isPublic: otherParticipant.isPublic,
                     });
                 }
             }
@@ -83,7 +83,7 @@ export const getUsersForSidebar = async (req, res) => {
 
         const filteredUsers = await User.find({
             _id: { $ne: loggedInUserId },
-            isPublic: { $ne: false },
+            isPublic: true,
         }).select("-password");
 
         res.status(200).json(filteredUsers);

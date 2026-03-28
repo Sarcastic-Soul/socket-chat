@@ -172,7 +172,7 @@ const UserProfilePage = () => {
                         </Paper>
                     </Stack>
 
-                    {user.isPublic !== false && (
+                    {user.isPublic && (
                         <Group w="100%" grow mt="md">
                             <Button
                                 variant="light"

@@ -2,8 +2,40 @@
 
 A real-time chat application built with React (frontend) and Express.js (backend) using Socket.io for live communication.
 
-![Chat App Screenshot](./screenshots/home-ss.png)
-![Chat App Screenshot](./screenshots/conversation-ss.png)
+## 🌐 Live Demo
+
+🔗 Deployment: [https://socket-chat-nine-tau.vercel.app/](https://socket-chat-nine-tau.vercel.app/)   
+🧪 Test Credentials (or run the seed script):
+- Username: alice
+- Password: password123
+
+## 🏗️ Architecture
+
+- Frontend (React + Vite) communicates with backend via REST + Socket.io
+- Real-time events handled using WebSockets (Socket.io)
+- Media uploads handled via Cloudinary
+- Messages stored in MongoDB with AES-256 encryption
+- Local caching via IndexedDB (idb) using stale-while-revalidate strategy
+- WebRTC used for peer-to-peer video calling (signaling via Socket.io)
+
+## ⚡ Engineering Highlights
+
+- Implemented stale-while-revalidate caching using IndexedDB for instant chat loading
+- Designed real-time message lifecycle (sent → read) using Socket.io events
+- Built peer-to-peer video calling using WebRTC with custom signaling server
+- Secured messages using AES-256 encryption at rest
+- Implemented rate limiting and abuse protection using express-rate-limit and Helmet
+
+## 📸 Screenshots
+
+### 🏠 Home Screen & Landing
+![Home](./screenshots/home-ss.png)
+
+### 💬 Chat Interface
+![Chat](./screenshots/conversation-ss.png)
+
+### 📹 Video Calling
+![Video](./screenshots/video-call.png)
 
 ## Features ✨
 
@@ -26,8 +58,34 @@ A real-time chat application built with React (frontend) and Express.js (backend
 
 ## Tech Stack 🛠️
 
-**Frontend:** React, Mantine UI (@mantine/core, @mantine/notifications), Zustand, Socket.io-client, emoji-picker-react, idb, react-icons, react-router-dom
-**Backend:** Express.js, Socket.io, MongoDB, JWT authentication, bcryptjs, cloudinary, cookie-parser, dotenv, jsonwebtoken, mongoose, express-rate-limit, helmet
+- **Frontend:** React, Mantine UI (@mantine/core, @mantine/notifications), Zustand, Socket.io-client, emoji-picker-react, idb, react-icons, react-router-dom
+- **Backend:** Express.js, Socket.io, MongoDB, JWT authentication, bcryptjs, cloudinary, cookie-parser, dotenv, jsonwebtoken, mongoose, express-rate-limit, helmet
+
+## 📂 Project Structure
+
+```text
+mern-chat-app/
+├── backend/            # Express.js + Socket.io Server
+│   ├── controllers/    # Route logic (Auth, Messages, Users, Groups)
+│   ├── db/             # MongoDB connection setup
+│   ├── middleware/     # Protected routes & Rate Limiter
+│   ├── models/         # Mongoose Schemas
+│   ├── routes/         # API Endpoint definitions
+│   ├── socket/         # WebRTC Signaling & Socket.io events
+│   ├── utils/          # Encryption, Cloudinary & JWT helpers
+│   └── server.js       # Main server entry point
+└── frontend/           # React + Vite Client
+    ├── public/         # Static assets
+    └── src/
+        ├── components/ # Reusable UI components (Mantine)
+        ├── context/    # React Context (Auth, Call, Socket)
+        ├── hooks/      # Custom API hooks (SWR logic)
+        ├── pages/      # App Views (Home, Landing, Login, Profile)
+        ├── utils/      # IndexedDB cache manager
+        ├── zustand/    # Global state management
+        ├── App.jsx     # Main Router + Global Modals
+        └── main.jsx    # React DOM root + Theme Providers
+```
 
 ## Getting Started 🏁
 

@@ -37,11 +37,9 @@ export const sendMessage = async (req, res) => {
         }
 
         if (!conversation.participants.includes(senderId)) {
-            return res
-                .status(403)
-                .json({
-                    error: "You are not a participant in this conversation.",
-                });
+            return res.status(403).json({
+                error: "You are not a participant in this conversation.",
+            });
         }
 
         const newMessage = new Message({
@@ -81,12 +79,10 @@ export const sendMessage = async (req, res) => {
                 "participants",
                 "fullName profilePic username isPublic",
             );
-            return res
-                .status(201)
-                .json({
-                    newMessage: populatedMessage,
-                    newConversation: populatedConv,
-                });
+            return res.status(201).json({
+                newMessage: populatedMessage,
+                newConversation: populatedConv,
+            });
         }
 
         res.status(201).json({ newMessage: populatedMessage });
@@ -105,11 +101,9 @@ export const getMessages = async (req, res) => {
         const conversation = await Conversation.findById(conversationId);
 
         if (!conversation || !conversation.participants.includes(senderId)) {
-            return res
-                .status(404)
-                .json({
-                    error: "Conversation not found or you are not a member.",
-                });
+            return res.status(404).json({
+                error: "Conversation not found or you are not a member.",
+            });
         }
 
         let messageQuery = { _id: { $in: conversation.messages } };
@@ -129,6 +123,56 @@ export const getMessages = async (req, res) => {
         res.status(200).json(messages);
     } catch (error) {
         console.error("Error in getMessages controller:", error.message);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+export const markMessagesAsRead = async (req, res) => {
+    try {
+        const { id: conversationId } = req.params;
+        const userId = req.user._id;
+
+        const conversation = await Conversation.findById(conversationId);
+        if (!conversation || !conversation.participants.includes(userId)) {
+            return res
+                .status(404)
+                .json({
+                    error: "Conversation not found or you are not a member.",
+                });
+        }
+
+        await Message.updateMany(
+            {
+                receiverId: conversationId,
+                senderId: { $ne: userId },
+                status: { $ne: "read" },
+            },
+            {
+                $set: { status: "read" },
+            },
+        );
+
+        if (conversation.isGroupChat) {
+            io.to(conversationId).emit("messagesRead", {
+                conversationId,
+                userId,
+            });
+        } else {
+            const otherParticipantId = conversation.participants.find(
+                (p) => p.toString() !== userId.toString(),
+            );
+            const senderSocketId = getReceiverSocketId(otherParticipantId);
+            if (senderSocketId) {
+                io.to(senderSocketId).emit("messagesRead", {
+                    conversationId,
+                    userId,
+                });
+            }
+        }
+
+        res.status(200).json({ message: "Messages marked as read" });
+    } catch (error) {
+        console.error("Error in markMessagesAsRead controller:", error.message);
         res.status(500).json({ error: "Internal server error" });
     }
 };

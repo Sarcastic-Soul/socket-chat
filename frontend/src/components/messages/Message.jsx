@@ -15,6 +15,7 @@ import {
     UnstyledButton,
 } from "@mantine/core";
 import { FiSmile } from "react-icons/fi";
+import { BsCheck, BsCheckAll } from "react-icons/bs";
 
 const Message = ({ message }) => {
     const { authUser } = useAuthContext();
@@ -241,9 +242,23 @@ const Message = ({ message }) => {
                     </Group>
                 )}
 
-                <Text size="xs" c="dimmed">
-                    {formattedTime}
-                </Text>
+                <Group gap={4} align="center">
+                    <Text size="xs" c="dimmed">
+                        {formattedTime}
+                    </Text>
+                    {fromMe &&
+                        (message.status === "read" ? (
+                            <BsCheckAll
+                                size={14}
+                                style={{ color: "var(--mantine-color-blue-5)" }}
+                            />
+                        ) : (
+                            <BsCheck
+                                size={14}
+                                style={{ color: "var(--mantine-color-dimmed)" }}
+                            />
+                        ))}
+                </Group>
             </Stack>
 
             {fromMe && <Avatar src={profilePic} radius="xl" size="md" />}

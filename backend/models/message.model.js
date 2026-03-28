@@ -14,7 +14,7 @@ const messageSchema = new mongoose.Schema(
         },
         message: {
             type: String,
-            default: ""
+            default: "",
         },
         mediaUrl: {
             type: String,
@@ -24,6 +24,11 @@ const messageSchema = new mongoose.Schema(
             type: String,
             enum: ["text", "image", "video", "audio", "file"],
             default: "text",
+        },
+        status: {
+            type: String,
+            enum: ["sent", "read"],
+            default: "sent",
         },
         reactions: [
             {
@@ -36,11 +41,11 @@ const messageSchema = new mongoose.Schema(
                     type: String, // e.g., "👍", "❤️", "😂"
                     required: true,
                 },
-                _id: false // Prevents Mongoose from creating a default _id for subdocuments
+                _id: false, // Prevents Mongoose from creating a default _id for subdocuments
             },
         ],
     },
-    { timestamps: true }
+    { timestamps: true },
 );
 
 const Message = mongoose.model("Message", messageSchema);

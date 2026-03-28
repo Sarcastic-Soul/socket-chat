@@ -1,15 +1,23 @@
 import { create } from "zustand";
-import { addMessageToCache, updateMessageInCache } from '../utils/messageCacheDB';
+import {
+    addMessageToCache,
+    updateMessageInCache,
+} from "../utils/messageCacheDB";
 
 const useConversation = create((set, get) => ({
     selectedConversation: null,
-    setSelectedConversation: (conversation) => set({ selectedConversation: conversation }),
+    setSelectedConversation: (conversation) =>
+        set({ selectedConversation: conversation }),
 
     messages: [],
     setMessages: (msgs) => set({ messages: msgs }),
 
     conversations: [],
     setConversations: (conversations) => set({ conversations }),
+    addConversation: (conversation) =>
+        set((state) => ({
+            conversations: [conversation, ...state.conversations],
+        })),
 
     searchTerm: "", // Add searchTerm state
     setSearchTerm: (term) => set({ searchTerm: term }), // Add setter for searchTerm
@@ -17,7 +25,9 @@ const useConversation = create((set, get) => ({
     addMessage: (message) => {
         const { selectedConversation } = get();
         set((state) => {
-            const messageExists = state.messages.some(msg => msg._id === message._id);
+            const messageExists = state.messages.some(
+                (msg) => msg._id === message._id,
+            );
             if (messageExists) return state;
             return { messages: [...state.messages, message] };
         });
@@ -29,9 +39,9 @@ const useConversation = create((set, get) => ({
     updateMessage: (updatedMessage) => {
         const { selectedConversation } = get();
         set((state) => ({
-            messages: state.messages.map(msg =>
-                msg._id === updatedMessage._id ? updatedMessage : msg
-            )
+            messages: state.messages.map((msg) =>
+                msg._id === updatedMessage._id ? updatedMessage : msg,
+            ),
         }));
         if (selectedConversation?._id) {
             updateMessageInCache(selectedConversation._id, updatedMessage);
@@ -40,7 +50,19 @@ const useConversation = create((set, get) => ({
 
     removeMessage: (messageId) => {
         set((state) => ({
-            messages: state.messages.filter(msg => msg._id !== messageId)
+            messages: state.messages.filter((msg) => msg._id !== messageId),
+        }));
+    },
+
+    markMessagesRead: (userId) => {
+        set((state) => ({
+            messages: state.messages.map((msg) => {
+                const msgSenderId = msg.senderId?._id || msg.senderId;
+                if (msgSenderId !== userId && msg.status !== "read") {
+                    return { ...msg, status: "read" };
+                }
+                return msg;
+            }),
         }));
     },
 }));

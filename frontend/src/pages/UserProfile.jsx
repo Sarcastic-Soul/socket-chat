@@ -172,15 +172,17 @@ const UserProfilePage = () => {
                         </Paper>
                     </Stack>
 
-                    <Group w="100%" grow mt="md">
-                        <Button
-                            variant="light"
-                            leftSection={<FiMessageSquare size={14} />}
-                            onClick={() => navigate("/")}
-                        >
-                            Message
-                        </Button>
-                    </Group>
+                    {user.isPublic !== false && (
+                        <Group w="100%" grow mt="md">
+                            <Button
+                                variant="light"
+                                leftSection={<FiMessageSquare size={14} />}
+                                onClick={() => navigate("/")}
+                            >
+                                Message
+                            </Button>
+                        </Group>
+                    )}
                 </Stack>
             </Paper>
         </Center>

@@ -5,15 +5,21 @@ import notificationSound from "../assets/sounds/notification.mp3";
 
 const useListenMessages = () => {
     const { socket } = useSocketContext();
-    const { addMessage, updateMessage, selectedConversation } = useConversation();
+    const {
+        addMessage,
+        updateMessage,
+        selectedConversation,
+        markMessagesRead,
+    } = useConversation();
 
     useEffect(() => {
         const handleNewMessage = (newMessage) => {
             // Only add message if it's for the currently selected conversation
-            if (selectedConversation &&
+            if (
+                selectedConversation &&
                 (newMessage.senderId === selectedConversation._id ||
-                    newMessage.receiverId === selectedConversation._id)) {
-
+                    newMessage.receiverId === selectedConversation._id)
+            ) {
                 newMessage.shouldShake = true;
                 const sound = new Audio(notificationSound);
                 sound.play();
@@ -24,26 +30,44 @@ const useListenMessages = () => {
 
         const handleMessageReaction = (updatedMessage) => {
             // Only update message if it's for the currently selected conversation
-            if (selectedConversation &&
+            if (
+                selectedConversation &&
                 (updatedMessage.senderId === selectedConversation._id ||
-                    updatedMessage.receiverId === selectedConversation._id)) {
-
+                    updatedMessage.receiverId === selectedConversation._id)
+            ) {
                 updateMessage(updatedMessage);
+            }
+        };
+
+        const handleMessagesRead = ({ conversationId, userId }) => {
+            if (
+                selectedConversation &&
+                selectedConversation._id === conversationId
+            ) {
+                markMessagesRead(userId);
             }
         };
 
         if (socket) {
             socket.on("newMessage", handleNewMessage);
             socket.on("messageReaction", handleMessageReaction);
+            socket.on("messagesRead", handleMessagesRead);
         }
 
         return () => {
             if (socket) {
                 socket.off("newMessage", handleNewMessage);
                 socket.off("messageReaction", handleMessageReaction);
+                socket.off("messagesRead", handleMessagesRead);
             }
         };
-    }, [socket, addMessage, updateMessage, selectedConversation]);
+    }, [
+        socket,
+        addMessage,
+        updateMessage,
+        markMessagesRead,
+        selectedConversation,
+    ]);
 };
 
 export default useListenMessages;

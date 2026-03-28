@@ -43,6 +43,7 @@ const useGetMessages = () => {
             // Stale-While-Revalidate: always fetch the latest messages from the network
             const res = await fetch(
                 `${import.meta.env.VITE_API_URL}/api/messages/${conversationId}?limit=50`,
+                { credentials: "include" },
             );
             if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
             const data = await res.json();
@@ -50,31 +51,9 @@ const useGetMessages = () => {
 
             const chronologicalMessages = data.reverse();
 
-            if (cached && cached.length > 0) {
-                setMessages((prevMessages) => {
-                    const messagesMap = new Map(
-                        prevMessages.map((msg) => [msg._id, msg]),
-                    );
-                    chronologicalMessages.forEach((msg) =>
-                        messagesMap.set(msg._id, msg),
-                    );
-
-                    const mergedMessages = Array.from(
-                        messagesMap.values(),
-                    ).sort(
-                        (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
-                    );
-
-                    setCachedMessages(conversationId, mergedMessages).catch(
-                        console.error,
-                    );
-                    return mergedMessages;
-                });
-            } else {
-                setMessages(chronologicalMessages);
-                await setCachedMessages(conversationId, chronologicalMessages);
-                setHasMore(data.length === 50);
-            }
+            setMessages(chronologicalMessages);
+            await setCachedMessages(conversationId, chronologicalMessages);
+            setHasMore(data.length === 50);
         } catch (error) {
             console.error("Error fetching messages:", error);
             notifications.show({
@@ -105,6 +84,7 @@ const useGetMessages = () => {
             const oldestMessageId = messages[0]?._id;
             const res = await fetch(
                 `${import.meta.env.VITE_API_URL}/api/messages/${conversationId}?before=${oldestMessageId}&limit=50`,
+                { credentials: "include" },
             );
 
             if (!res.ok) {

@@ -6,6 +6,7 @@ import {
     FiMessageSquare,
     FiUser,
     FiCalendar,
+    FiVideo,
 } from "react-icons/fi";
 import {
     Center,
@@ -21,10 +22,12 @@ import {
     ThemeIcon,
     Box,
 } from "@mantine/core";
+import { useCallContext } from "../context/CallContext";
 
 const UserProfilePage = () => {
     const { username } = useParams();
     const navigate = useNavigate();
+    const { callUser } = useCallContext();
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -180,6 +183,14 @@ const UserProfilePage = () => {
                                 onClick={() => navigate("/")}
                             >
                                 Message
+                            </Button>
+                            <Button
+                                variant="light"
+                                color="teal"
+                                leftSection={<FiVideo size={14} />}
+                                onClick={() => callUser(user._id)}
+                            >
+                                Call
                             </Button>
                         </Group>
                     )}

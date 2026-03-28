@@ -5,6 +5,7 @@ import SearchInput from "./SearchInput";
 import ProfileButton from "./ProfileButton";
 import CreateGroupModal from "./CreateGroupModal";
 import StartChatModal from "../modals/StartChatModal";
+import ThemeToggle from "../ThemeToggle";
 import { FiPlusCircle } from "react-icons/fi";
 import { Stack, Group, Divider, ActionIcon, Button } from "@mantine/core";
 
@@ -28,6 +29,7 @@ const Sidebar = () => {
                 <Group gap="md">
                     <LogoutButton />
                     <ProfileButton />
+                    <ThemeToggle />
                 </Group>
 
                 <Group gap="xs">

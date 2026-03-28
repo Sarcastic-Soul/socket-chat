@@ -3,9 +3,10 @@ import { useNavigate } from "react-router-dom";
 import useConversation from "../../zustand/useConversation";
 import MessageInput from "./MessageInput";
 import Messages from "./Messages";
-import { FiMessageSquare, FiUsers } from "react-icons/fi";
+import { FiMessageSquare, FiUsers, FiVideo } from "react-icons/fi";
 import { useAuthContext } from "../../context/AuthContext";
 import { useSocketContext } from "../../context/SocketContext";
+import { useCallContext } from "../../context/CallContext";
 import {
     Flex,
     Group,
@@ -17,14 +18,16 @@ import {
 } from "@mantine/core";
 
 const MessageContainer = () => {
-    const { selectedConversation, setSelectedConversation, messages } =
-        useConversation();
+    const { selectedConversation, setSelectedConversation } = useConversation();
     const { onlineUsers } = useSocketContext();
+    const { callUser } = useCallContext();
     const navigate = useNavigate();
 
     useEffect(() => {
         return () => setSelectedConversation(null);
     }, [setSelectedConversation]);
+
+    console.log("Selected Conversation:", selectedConversation?.isGroupChat);
 
     const isOnline =
         selectedConversation &&
@@ -85,16 +88,34 @@ const MessageContainer = () => {
                                     )}
                             </Stack>
                         </Group>
-                        {selectedConversation.isGroupChat && (
-                            <ActionIcon
-                                variant="subtle"
-                                radius="xl"
-                                size="lg"
-                                onClick={handleHeaderClick}
-                            >
-                                <FiUsers size={18} />
-                            </ActionIcon>
-                        )}
+                        <Group gap="sm">
+                            {!selectedConversation.isGroupChat && (
+                                <ActionIcon
+                                    variant="filled"
+                                    radius="xl"
+                                    size="lg"
+                                    onClick={() =>
+                                        callUser(
+                                            selectedConversation.participantId ||
+                                                selectedConversation._id,
+                                        )
+                                    }
+                                    color="teal"
+                                >
+                                    <FiVideo size={20} />
+                                </ActionIcon>
+                            )}
+                            {selectedConversation.isGroupChat && (
+                                <ActionIcon
+                                    variant="subtle"
+                                    radius="xl"
+                                    size="lg"
+                                    onClick={handleHeaderClick}
+                                >
+                                    <FiUsers size={18} />
+                                </ActionIcon>
+                            )}
+                        </Group>
                     </Group>
 
                     <Messages />

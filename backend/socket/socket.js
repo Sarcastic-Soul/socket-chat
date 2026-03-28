@@ -47,6 +47,49 @@ io.on("connection", async (socket) => {
 
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
 
+    // WebRTC Signaling for 1-on-1 Calls
+    socket.on("callUser", (data) => {
+        console.log(
+            `📞 Socket: callUser from ${data.from} to ${data.userToCall}`,
+        );
+        const receiverSocketId = getReceiverSocketId(data.userToCall);
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit("incomingCall", {
+                signal: data.signalData,
+                from: data.from,
+                callerName: data.callerName,
+                callerPic: data.callerPic,
+            });
+        } else {
+            console.log(
+                `❌ Socket: User ${data.userToCall} is offline, cannot call`,
+            );
+        }
+    });
+
+    socket.on("answerCall", (data) => {
+        console.log(`📞 Socket: answerCall from ${socket.id} to ${data.to}`);
+        const callerSocketId = getReceiverSocketId(data.to);
+        if (callerSocketId) {
+            io.to(callerSocketId).emit("callAccepted", data.signal);
+        }
+    });
+
+    socket.on("endCall", (data) => {
+        console.log(`📞 Socket: endCall for ${data.to}`);
+        const receiverSocketId = getReceiverSocketId(data.to);
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit("callEnded");
+        }
+    });
+
+    socket.on("iceCandidate", (data) => {
+        const receiverSocketId = getReceiverSocketId(data.to);
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit("iceCandidate", data.candidate);
+        }
+    });
+
     socket.on("disconnect", () => {
         delete userSocketMap[userId];
         io.emit("getOnlineUsers", Object.keys(userSocketMap));

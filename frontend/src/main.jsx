@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
+import { CallContextProvider } from "./context/CallContext.jsx";
 import "./index.css";
 import { BrowserRouter } from "react-router-dom";
 import { AuthContextProvider } from "./context/AuthContext.jsx";
@@ -49,7 +50,9 @@ const ThemeWrapper = () => {
             }}
         >
             <Notifications position="top-right" zIndex={1000} />
-            <App />
+            <CallContextProvider>
+                <App />
+            </CallContextProvider>
         </MantineProvider>
     );
 };

@@ -1,43 +1,9 @@
 import { useState, useEffect } from "react";
 import MessageContainer from "../components/messages/MessageContainer";
 import Sidebar from "../components/sidebar/Sidebar";
-import {
-    Container,
-    Paper,
-    Flex,
-    Box,
-    ActionIcon,
-    useMantineColorScheme,
-    Menu,
-    ColorSwatch,
-    Group,
-    useMantineTheme,
-} from "@mantine/core";
-import { FiMoon, FiSun, FiDroplet, FiCheck } from "react-icons/fi";
-import useThemeStore from "../zustand/useThemeStore";
+import { Container, Paper, Flex, Box } from "@mantine/core";
 
 const Home = () => {
-    const { colorScheme, toggleColorScheme } = useMantineColorScheme();
-    const dark = colorScheme === "dark";
-    const theme = useMantineTheme();
-
-    // Theme color management
-    const { primaryColor, setPrimaryColor } = useThemeStore();
-    const swatches = [
-        "red",
-        "pink",
-        "grape",
-        "violet",
-        "indigo",
-        "blue",
-        "cyan",
-        "teal",
-        "green",
-        "lime",
-        "yellow",
-        "orange",
-    ];
-
     // Set initial sidebar width to 25% of the viewport width
     const [sidebarWidth, setSidebarWidth] = useState(window.innerWidth * 0.25);
 
@@ -88,56 +54,6 @@ const Home = () => {
                 overflow: "hidden",
             }}
         >
-            <Group
-                gap="sm"
-                style={{
-                    position: "absolute",
-                    top: 15,
-                    right: 15,
-                    zIndex: 1000,
-                }}
-            >
-                <Menu shadow="md" width={220} position="bottom-end">
-                    <Menu.Target>
-                        <ActionIcon
-                            variant="default"
-                            size="lg"
-                            title="Change theme color"
-                        >
-                            <FiDroplet size={18} />
-                        </ActionIcon>
-                    </Menu.Target>
-
-                    <Menu.Dropdown>
-                        <Menu.Label>Primary Color</Menu.Label>
-                        <Group p="xs" gap="xs">
-                            {swatches.map((color) => (
-                                <ColorSwatch
-                                    key={color}
-                                    color={theme.colors[color][6]}
-                                    onClick={() => setPrimaryColor(color)}
-                                    size={24}
-                                    style={{ cursor: "pointer" }}
-                                >
-                                    {primaryColor === color && (
-                                        <FiCheck size={12} color="white" />
-                                    )}
-                                </ColorSwatch>
-                            ))}
-                        </Group>
-                    </Menu.Dropdown>
-                </Menu>
-
-                <ActionIcon
-                    variant="default"
-                    size="lg"
-                    onClick={() => toggleColorScheme()}
-                    title="Toggle color scheme"
-                >
-                    {dark ? <FiSun size={18} /> : <FiMoon size={18} />}
-                </ActionIcon>
-            </Group>
-
             <Paper
                 radius={0}
                 h="100%"

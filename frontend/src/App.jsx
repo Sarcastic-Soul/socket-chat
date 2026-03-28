@@ -60,4 +60,13 @@ function App() {
     );
 }
 
-export default App;
+import CallModal from "./components/call/CallModal";
+
+const AppWithCallModal = () => (
+    <>
+        <CallModal />
+        <App />
+    </>
+);
+
+export default AppWithCallModal;

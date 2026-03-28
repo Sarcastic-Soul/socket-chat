@@ -41,7 +41,7 @@ export const sendMessage = async (req, res) => {
 
         await Promise.all([conversation.save(), newMessage.save()]);
 
-        const populatedMessage = await newMessage.populate("senderId", "fullName profilePic");
+        const populatedMessage = await newMessage.populate("senderId", "fullName profilePic username");
 
         if (conversation.isGroupChat) {
             io.to(conversation._id.toString()).emit("newMessage", populatedMessage);
@@ -54,7 +54,7 @@ export const sendMessage = async (req, res) => {
         }
 
         if (isNewConversation) {
-            const populatedConv = await conversation.populate("participants", "fullName profilePic");
+            const populatedConv = await conversation.populate("participants", "fullName profilePic username");
             return res.status(201).json({ newMessage: populatedMessage, newConversation: populatedConv });
         }
 

@@ -387,7 +387,16 @@ const GroupInfo = () => {
                                         justify="space-between"
                                         wrap="nowrap"
                                     >
-                                        <MantineGroup gap="sm" wrap="nowrap">
+                                        <MantineGroup
+                                            gap="sm"
+                                            wrap="nowrap"
+                                            onClick={() =>
+                                                navigate(
+                                                    `/user/${participant.username}`,
+                                                )
+                                            }
+                                            style={{ cursor: "pointer" }}
+                                        >
                                             <Avatar
                                                 src={participant.profilePic}
                                                 radius="xl"

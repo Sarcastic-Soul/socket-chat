@@ -5,7 +5,7 @@ export const getGroupDetails = async (req, res) => {
         const { groupId } = req.params;
         const userId = req.user._id;
 
-        const group = await Conversation.findById(groupId).populate("participants", "fullName profilePic").populate("admins", "fullName");
+        const group = await Conversation.findById(groupId).populate("participants", "fullName profilePic username").populate("admins", "fullName");
 
         if (!group) {
             return res.status(404).json({ error: "Group not found" });

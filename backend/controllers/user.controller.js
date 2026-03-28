@@ -30,7 +30,7 @@ export const getConversations = async (req, res) => {
 
         const conversations = await Conversation.find({ participants: loggedInUserId }).populate({
             path: "participants",
-            select: "fullName profilePic",
+            select: "fullName profilePic username",
         });
 
         const formattedConversations = conversations.reduce((acc, conv) => {
@@ -52,7 +52,8 @@ export const getConversations = async (req, res) => {
                         isGroupChat: false,
                         fullName: otherParticipant.fullName,
                         profilePic: otherParticipant.profilePic,
-                        participantId: otherParticipant._id
+                        participantId: otherParticipant._id,
+                        username: otherParticipant.username
                     });
                 }
             }
@@ -80,10 +81,10 @@ export const getUsersForSidebar = async (req, res) => {
     }
 };
 
-export const getUserById = async (req, res) => {
+export const getUserByUsername = async (req, res) => {
     try {
-        const { id } = req.params; // Get user ID from URL parameters
-        const user = await User.findById(id).select("-password"); // Find user and exclude password
+        const { username } = req.params; // Get user ID from URL parameters
+        const user = await User.findOne({ username }).select("-password"); // Find user and exclude password
 
         if (!user) {
             return res.status(404).json({ error: "User not found" });
@@ -91,7 +92,7 @@ export const getUserById = async (req, res) => {
 
         res.status(200).json(user);
     } catch (error) {
-        console.error("Error in getUserById: ", error.message);
+        console.error("Error in getUserByUsername: ", error.message);
         res.status(500).json({ error: "Internal server error" });
     }
 };

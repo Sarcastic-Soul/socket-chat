@@ -165,19 +165,9 @@ const Home = () => {
                         w={5}
                         style={{
                             cursor: "col-resize",
-                            backgroundColor:
-                                "var(--mantine-color-default-border)",
+                            backgroundColor: "transparent",
                             flexShrink: 0,
                             zIndex: 10,
-                            transition: "background-color 0.2s ease",
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor =
-                                "var(--mantine-color-primary-filled)";
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor =
-                                "var(--mantine-color-default-border)";
                         }}
                     />
 

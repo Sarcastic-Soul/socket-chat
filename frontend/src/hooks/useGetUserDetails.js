@@ -18,7 +18,7 @@ const useGetUserDetails = () => {
             setLoading(true);
             setError(null);
             try {
-                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users/${authUser._id}`);
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users/${authUser.username}`);
                 const data = await res.json();
 
                 if (data.error) {

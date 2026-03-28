@@ -43,7 +43,8 @@ const useSendMessage = () => {
                     isGroupChat: false,
                     fullName: otherParticipant.fullName,
                     profilePic: otherParticipant.profilePic,
-                    participantId: otherParticipant._id
+                    participantId: otherParticipant._id,
+                    username: otherParticipant.username
                 };
 
                 setConversations([formattedNewConversation, ...conversations]);

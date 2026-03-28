@@ -1,7 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { notifications } from "@mantine/notifications";
-import { FiArrowLeft, FiMessageSquare } from "react-icons/fi";
+import {
+    FiArrowLeft,
+    FiMessageSquare,
+    FiUser,
+    FiCalendar,
+} from "react-icons/fi";
 import {
     Center,
     Paper,
@@ -13,10 +18,12 @@ import {
     Loader,
     Button,
     Group,
+    ThemeIcon,
+    Box,
 } from "@mantine/core";
 
 const UserProfilePage = () => {
-    const { id } = useParams();
+    const { username } = useParams();
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -25,23 +32,26 @@ const UserProfilePage = () => {
         const fetchUser = async () => {
             try {
                 const res = await fetch(
-                    `${import.meta.env.VITE_API_URL || ""}/api/users/${id}`,
+                    `${import.meta.env.VITE_API_URL || ""}/api/users/${username}`,
                 );
                 const data = await res.json();
 
                 if (data.error) throw new Error(data.error);
                 setUser(data);
             } catch (error) {
-                notifications.show({ message: error.message || "Failed to fetch user profile", color: "red" });
+                notifications.show({
+                    message: error.message || "Failed to fetch user profile",
+                    color: "red",
+                });
             } finally {
                 setLoading(false);
             }
         };
 
-        if (id) {
+        if (username) {
             fetchUser();
         }
-    }, [id]);
+    }, [username]);
 
     if (loading) {
         return (
@@ -99,15 +109,67 @@ const UserProfilePage = () => {
                         }}
                     />
 
-                    <Stack align="center" gap={4}>
+                    <Stack align="center" gap={4} w="100%">
                         <Text size="xl" fw={600}>
                             {user.fullName}
                         </Text>
-                        <Text size="sm" c="dimmed">
+                        <Text size="sm" c="dimmed" mb="md">
                             @
                             {user.username ||
                                 user.fullName.toLowerCase().replace(/\s/g, "")}
                         </Text>
+
+                        <Paper
+                            withBorder
+                            p="md"
+                            radius="md"
+                            w="100%"
+                            bg="var(--mantine-color-default)"
+                        >
+                            <Stack gap="sm">
+                                <Group wrap="nowrap">
+                                    <ThemeIcon
+                                        variant="light"
+                                        size="md"
+                                        radius="xl"
+                                    >
+                                        <FiUser size={14} />
+                                    </ThemeIcon>
+                                    <Box>
+                                        <Text size="xs" c="dimmed">
+                                            Full Name
+                                        </Text>
+                                        <Text size="sm" fw={500}>
+                                            {user.fullName}
+                                        </Text>
+                                    </Box>
+                                </Group>
+
+                                <Group wrap="nowrap">
+                                    <ThemeIcon
+                                        variant="light"
+                                        size="md"
+                                        radius="xl"
+                                    >
+                                        <FiCalendar size={14} />
+                                    </ThemeIcon>
+                                    <Box>
+                                        <Text size="xs" c="dimmed">
+                                            Member Since
+                                        </Text>
+                                        <Text size="sm" fw={500}>
+                                            {new Date(
+                                                user.createdAt,
+                                            ).toLocaleDateString(undefined, {
+                                                year: "numeric",
+                                                month: "long",
+                                                day: "numeric",
+                                            })}
+                                        </Text>
+                                    </Box>
+                                </Group>
+                            </Stack>
+                        </Paper>
                     </Stack>
 
                     <Group w="100%" grow mt="md">

@@ -41,7 +41,10 @@ const MessageContainer = () => {
         if (selectedConversation?.isGroupChat) {
             navigate(`/group/${selectedConversation._id}`);
         } else if (selectedConversation) {
-            navigate(`/user/${selectedConversation.participantId}`);
+            const userIdentifier =
+                selectedConversation.username ||
+                selectedConversation.participantId;
+            navigate(`/user/${userIdentifier}`);
         }
     };
 

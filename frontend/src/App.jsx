@@ -11,15 +11,45 @@ import GroupInfo from "./pages/GroupInfo";
 function App() {
     const { authUser } = useAuthContext();
 
+    console.log(authUser);
+
     return (
-        <div className='p-4 h-screen flex items-center justify-center'>
+        <div className="p-4 h-screen flex items-center justify-center">
             <Routes>
-                <Route path='/' element={authUser ? <Home /> : <Navigate to={"/login"} />} />
-                <Route path='/login' element={authUser ? <Navigate to='/' /> : <Login />} />
-                <Route path='/signup' element={authUser ? <Navigate to='/' /> : <SignUp />} />
-                <Route path='/me' element={authUser ? <ProfilePage /> : <Navigate to={"/login"} />} />
-                <Route path='/user/:userId' element={authUser ? <UserProfilePage /> : <Navigate to={"/login"} />} />
-                <Route path='/group/:groupId' element={authUser ? <GroupInfo /> : <Navigate to={"/login"} />} />
+                <Route
+                    path="/"
+                    element={authUser ? <Home /> : <Navigate to={"/login"} />}
+                />
+                <Route
+                    path="/login"
+                    element={authUser ? <Navigate to="/" /> : <Login />}
+                />
+                <Route
+                    path="/signup"
+                    element={authUser ? <Navigate to="/" /> : <SignUp />}
+                />
+                <Route
+                    path="/me"
+                    element={
+                        authUser ? <ProfilePage /> : <Navigate to={"/login"} />
+                    }
+                />
+                <Route
+                    path="/user/:userId"
+                    element={
+                        authUser ? (
+                            <UserProfilePage />
+                        ) : (
+                            <Navigate to={"/login"} />
+                        )
+                    }
+                />
+                <Route
+                    path="/group/:groupId"
+                    element={
+                        authUser ? <GroupInfo /> : <Navigate to={"/login"} />
+                    }
+                />
             </Routes>
             <Toaster />
         </div>

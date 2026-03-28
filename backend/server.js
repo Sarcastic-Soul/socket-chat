@@ -7,7 +7,7 @@ import authRoutes from "./routes/auth.routes.js";
 import messageRoutes from "./routes/message.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import groupRoutes from "./routes/group.routes.js";
-import cloudinaryRoutes from './routes/cloudinary.routes.js';
+import cloudinaryRoutes from "./routes/cloudinary.routes.js";
 
 import connectToMongoDB from "./db/connectToMongoDB.js";
 import { app, server } from "./socket/socket.js";
@@ -16,6 +16,7 @@ dotenv.config();
 
 const PORT = process.env.PORT || 5000;
 
+<<<<<<< HEAD
 const allowedOrigins = [
 	"https://socket-chat-nine-tau.vercel.app",
 	"http://localhost:3000",
@@ -38,6 +39,17 @@ app.use(cors({
 	allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
 	exposedHeaders: ['Set-Cookie']
 }));
+=======
+app.use(
+    cors({
+        origin: [
+            "http://localhost:3000",
+            "https://socket-chat-nine-tau.vercel.app",
+        ],
+        credentials: true,
+    }),
+);
+>>>>>>> 4e0c47a (start of refactor)
 
 app.options('*', cors());
 
@@ -50,7 +62,21 @@ app.use("/api/users", userRoutes);
 app.use("/api/groups", groupRoutes);
 app.use("/api/cloudinary", cloudinaryRoutes);
 
+<<<<<<< HEAD
 server.listen(PORT, () => {
 	connectToMongoDB();
 	console.log(`Server Running on port ${PORT}`);
 });
+=======
+if (process.env.NODE_ENV === "production") {
+    app.use(express.static(path.join(__dirname, "/frontend/dist")));
+    app.get("*", (req, res) => {
+        res.sendFile(path.join(__dirname, "frontend", "dist", "index.html"));
+    });
+}
+
+server.listen(PORT, () => {
+    connectToMongoDB();
+    console.log(`Server Running on port ${PORT}`);
+});
+>>>>>>> 4e0c47a (start of refactor)

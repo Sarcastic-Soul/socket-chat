@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import toast from "react-hot-toast";
+import { notifications } from "@mantine/notifications";
 import useConversation from "../zustand/useConversation";
 
 const useGetConversations = () => {
@@ -29,7 +29,7 @@ const useGetConversations = () => {
 				setConversations(data);
 			} catch (error) {
 				console.error('Error fetching conversations:', error);
-				toast.error(error.message);
+				notifications.show({ message: error.message, color: "red" });
 			} finally {
 				setLoading(false);
 			}

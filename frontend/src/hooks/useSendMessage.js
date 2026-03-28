@@ -1,6 +1,6 @@
 import { useState } from "react";
 import useConversation from "../zustand/useConversation";
-import toast from "react-hot-toast";
+import { notifications } from "@mantine/notifications";
 import { useAuthContext } from "../context/AuthContext";
 
 const useSendMessage = () => {
@@ -52,7 +52,7 @@ const useSendMessage = () => {
 
         } catch (error) {
             console.error("Error sending message:", error.message);
-            toast.error(error.message);
+            notifications.show({ message: error.message, color: "red" });
         } finally {
             setLoading(false);
         }

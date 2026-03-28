@@ -1,6 +1,6 @@
-// ProfileButton.jsx
 import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../../context/AuthContext";
+import { Avatar, ActionIcon } from "@mantine/core";
 
 const ProfileButton = () => {
     const navigate = useNavigate();
@@ -11,25 +11,20 @@ const ProfileButton = () => {
     };
 
     return (
-        <div>
-            {authUser?.profilePic ? (
-                <img
-                    src={authUser.profilePic}
-                    alt="Profile"
-                    className="w-10 h-10 rounded-full cursor-pointer object-cover"
-                    onClick={handleClick}
-                />
-            ) : (
-                <div
-                    className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center cursor-pointer"
-                    onClick={handleClick}
-                >
-                    <span className="text-white text-lg font-bold">
-                        {authUser?.username ? authUser.username.charAt(0).toUpperCase() : 'U'}
-                    </span>
-                </div>
-            )}
-        </div>
+        <ActionIcon
+            variant="transparent"
+            onClick={handleClick}
+            size="xl"
+            radius="xl"
+        >
+            <Avatar src={authUser?.profilePic} alt="Profile" radius="xl">
+                {/* Fallback text handled natively by Mantine if src is invalid/null */}
+                {authUser?.username
+                    ? authUser.username.charAt(0).toUpperCase()
+                    : "U"}
+            </Avatar>
+        </ActionIcon>
     );
 };
+
 export default ProfileButton;

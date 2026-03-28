@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import useConversation from "../zustand/useConversation";
-import toast from "react-hot-toast";
+import { notifications } from "@mantine/notifications";
 import { getCachedMessages, setCachedMessages, addOlderMessages } from "../utils/messageCacheDB";
 
 const useGetMessages = () => {
@@ -44,7 +44,7 @@ const useGetMessages = () => {
             }
         } catch (error) {
             console.error("Error fetching messages:", error);
-            toast.error(error.message || "Failed to load messages");
+            notifications.show({ message: error.message || "Failed to load messages", color: "red" });
             setMessages([]);
         } finally {
             setLoading(false);
@@ -95,7 +95,7 @@ const useGetMessages = () => {
             }
         } catch (error) {
             console.error("Error loading older messages:", error);
-            toast.error(error.message || "Failed to load older messages");
+            notifications.show({ message: error.message || "Failed to load older messages", color: "red" });
         } finally {
             setLoading(false);
         }

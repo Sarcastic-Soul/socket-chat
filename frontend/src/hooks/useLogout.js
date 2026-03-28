@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuthContext } from "../context/AuthContext";
-import toast from "react-hot-toast";
+import { notifications } from "@mantine/notifications";
 import { clearAllMessages } from "../utils/messageCacheDB";
 
 const useLogout = () => {
@@ -30,7 +30,7 @@ const useLogout = () => {
             setAuthUser(null);
 
         } catch (error) {
-            toast.error(error.message);
+            notifications.show({ message: error.message, color: "red" });
             localStorage.removeItem("chat-user");
             setAuthUser(null);
         } finally {

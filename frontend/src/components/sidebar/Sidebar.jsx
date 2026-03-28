@@ -5,40 +5,60 @@ import SearchInput from "./SearchInput";
 import ProfileButton from "./ProfileButton";
 import CreateGroupModal from "./CreateGroupModal";
 import StartChatModal from "../modals/StartChatModal";
-import { FaPlusCircle } from "react-icons/fa";
+import { FiPlusCircle } from "react-icons/fi";
+import { Stack, Group, Divider, ActionIcon, Button } from "@mantine/core";
 
 const Sidebar = () => {
     const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
     const [isStartChatModalOpen, setIsStartChatModalOpen] = useState(false);
 
     return (
-        <div className="w-full h-full p-4 flex flex-col bg-white/10 backdrop-blur-xl backdrop-saturate-150">
+        <Stack
+            h="100%"
+            p="md"
+            gap="sm"
+            style={{ backgroundColor: "var(--mantine-color-body)" }}
+        >
             <SearchInput />
-            <div className="divider px-3"></div>
+            <Divider />
+
             <Conversations />
 
-            <div className='mt-auto flex items-center justify-between'>
-                <div className="flex items-center gap-4">
+            <Group justify="space-between" align="center" mt="auto" pt="sm">
+                <Group gap="md">
                     <LogoutButton />
                     <ProfileButton />
-                </div>
+                </Group>
 
-                <div className="flex items-center gap-2">
-                    <button onClick={() => setIsStartChatModalOpen(true)} className="p-2 text-white hover:bg-white/20 rounded-full transition-colors" title="Start New Chat">
-                        <FaPlusCircle size={22} />
-                    </button>
-                    <button
+                <Group gap="xs">
+                    <ActionIcon
+                        variant="subtle"
+                        size="lg"
+                        radius="xl"
+                        onClick={() => setIsStartChatModalOpen(true)}
+                        title="Start New Chat"
+                    >
+                        <FiPlusCircle size={22} />
+                    </ActionIcon>
+                    <Button
+                        radius="xl"
                         onClick={() => setIsGroupModalOpen(true)}
-                        className="px-4 py-2 bg-blue-500 text-white rounded-full font-semibold hover:bg-blue-600 transition-colors"
                     >
                         New Group
-                    </button>
-                </div>
-            </div>
+                    </Button>
+                </Group>
+            </Group>
 
-            {isGroupModalOpen && <CreateGroupModal onClose={() => setIsGroupModalOpen(false)} />}
-            {isStartChatModalOpen && <StartChatModal onClose={() => setIsStartChatModalOpen(false)} />}
-        </div>
+            {isGroupModalOpen && (
+                <CreateGroupModal onClose={() => setIsGroupModalOpen(false)} />
+            )}
+            {isStartChatModalOpen && (
+                <StartChatModal
+                    onClose={() => setIsStartChatModalOpen(false)}
+                />
+            )}
+        </Stack>
     );
 };
+
 export default Sidebar;

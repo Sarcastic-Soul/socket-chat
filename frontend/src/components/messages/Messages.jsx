@@ -3,15 +3,16 @@ import useGetMessages from "../../hooks/useGetMessages";
 import MessageSkeleton from "../skeletons/MessageSkeleton";
 import Message from "./Message";
 import useListenMessages from "../../hooks/useListenMessages";
+import { ScrollArea, Center, Loader, Text, Stack } from "@mantine/core";
 
 const Messages = () => {
-    const { messages, loading, loadOlderMessages, hasMore, isLoadingMore } = useGetMessages();
+    const { messages, loading, loadOlderMessages, hasMore, isLoadingMore } =
+        useGetMessages();
     useListenMessages();
     const observer = useRef();
     const lastMessageRef = useRef();
-    const scrollContainerRef = useRef();
+    const viewportRef = useRef();
 
-    // Attaches an IntersectionObserver to the top of the message list
     const topRef = useCallback(
         (node) => {
             if (isLoadingMore) return;
@@ -23,44 +24,48 @@ const Messages = () => {
             });
             if (node) observer.current.observe(node);
         },
-        [isLoadingMore, hasMore, loadOlderMessages]
+        [isLoadingMore, hasMore, loadOlderMessages],
     );
 
-    // Auto-scroll to the bottom when new messages arrive
     useEffect(() => {
         if (messages.length > 0 && lastMessageRef.current) {
             setTimeout(() => {
                 lastMessageRef.current?.scrollIntoView({ behavior: "smooth" });
             }, 100);
         }
-    }, [messages.length]); // Only scroll when message count changes
+    }, [messages.length]);
 
     return (
-        <div className='px-4 flex-1 overflow-auto' ref={scrollContainerRef}>
-            {/* Top loading indicator for pagination */}
+        <ScrollArea
+            viewportRef={viewportRef}
+            style={{ flex: 1 }}
+            p="md"
+            offsetScrollbars
+        >
             {isLoadingMore && (
-                <div className="text-center py-2">
-                    <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-                    <span className="ml-2 text-sm text-gray-400">Loading more messages...</span>
-                </div>
+                <Center py="xs">
+                    <Loader size="sm" type="dots" />
+                    <Text size="sm" c="dimmed" ml="xs">
+                        Loading more messages...
+                    </Text>
+                </Center>
             )}
 
-            {/* Load more trigger - placed at the top */}
             {hasMore && messages.length > 0 && (
-                <div ref={topRef} className="h-1" />
+                <div ref={topRef} style={{ height: "1px" }} />
             )}
 
-            {/* Initial loading skeletons */}
             {loading && messages.length === 0 && (
-                <div className="space-y-4">
+                <Stack>
                     {[...Array(5)].map((_, idx) => (
                         <MessageSkeleton key={idx} />
                     ))}
-                </div>
+                </Stack>
             )}
 
-            {/* Messages */}
-            {messages && Array.isArray(messages) && messages.length > 0 &&
+            {messages &&
+                Array.isArray(messages) &&
+                messages.length > 0 &&
                 messages.map((message, idx) => {
                     const isLastMessage = idx === messages.length - 1;
                     return (
@@ -71,18 +76,19 @@ const Messages = () => {
                             <Message message={message} />
                         </div>
                     );
-                })
-            }
+                })}
 
-            {/* Empty state */}
-            {!loading && messages && Array.isArray(messages) && messages.length === 0 && (
-                <div className="flex items-center justify-center h-full">
-                    <p className='text-center text-gray-400'>
-                        Send a message to start the conversation.
-                    </p>
-                </div>
-            )}
-        </div>
+            {!loading &&
+                messages &&
+                Array.isArray(messages) &&
+                messages.length === 0 && (
+                    <Center h="100%">
+                        <Text c="dimmed">
+                            Send a message to start the conversation.
+                        </Text>
+                    </Center>
+                )}
+        </ScrollArea>
     );
 };
 

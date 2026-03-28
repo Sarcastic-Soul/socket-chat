@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import toast from "react-hot-toast";
+import { notifications } from "@mantine/notifications";
 
 const useGetUsers = () => {
 	const [loading, setLoading] = useState(false);
@@ -16,7 +16,7 @@ const useGetUsers = () => {
 				}
 				setUsers(data);
 			} catch (error) {
-				toast.error(error.message);
+				notifications.show({ message: error.message, color: "red" });
 			} finally {
 				setLoading(false);
 			}

@@ -1,19 +1,16 @@
-/* Keep these until EVERY component is fully migrated to Mantine */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body, html, #root {
-  margin: 0;
-  padding: 0;
-  min-height: 100vh;
+body,
+html,
+#root {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
 }
 
-/* If you are using a global background image from your public folder, add it here: */
-/*
 body {
-  background-image: url('/bg1.jpg');
-  background-size: cover;
-  background-position: center;
+    background-color: var(--mantine-color-body);
+    color: var(--mantine-color-text);
 }
-*/

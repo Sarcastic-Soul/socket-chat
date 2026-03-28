@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { FaUser, FaLock } from "react-icons/fa";
+import { FiUser, FiLock } from "react-icons/fi";
 import {
     Center,
     Paper,
@@ -29,7 +29,7 @@ const Login = () => {
             <Paper withBorder shadow="md" p={30} radius="md" w="100%" maw={400}>
                 <Title order={2} ta="center" mb="xl">
                     Login{" "}
-                    <Text span c="teal">
+                    <Text span c="var(--mantine-primary-color-filled)">
                         ChatApp
                     </Text>
                 </Title>
@@ -38,7 +38,7 @@ const Login = () => {
                     <Stack gap="md">
                         <InputField
                             label="Username"
-                            icon={<FaUser size={14} />}
+                            icon={<FiUser size={14} />}
                             value={username}
                             onChange={setUsername}
                             placeholder="Enter username"
@@ -100,7 +100,7 @@ const PasswordField = ({
 }) => (
     <PasswordInput
         label={label}
-        leftSection={<FaLock size={14} />}
+        leftSection={<FiLock size={14} />}
         visible={show}
         onVisibilityChange={onToggle}
         value={value}

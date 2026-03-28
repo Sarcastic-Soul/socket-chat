@@ -1,251 +1,454 @@
-import { useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { toast } from 'react-hot-toast';
-import { useAuthContext } from '../context/AuthContext';
-import { FaArrowLeft, FaEdit, FaTrash, FaUserPlus, FaCrown, FaUserMinus, FaCamera } from "react-icons/fa";
-import AddMemberModal from '../components/modals/AddMemberModal';
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { notifications } from "@mantine/notifications";
+import { useAuthContext } from "../context/AuthContext";
+import {
+    FiArrowLeft,
+    FiUserPlus,
+    FiCamera,
+    FiEdit2,
+    FiTrash2,
+} from "react-icons/fi";
+import {
+    Center,
+    Paper,
+    Title,
+    Avatar,
+    Text,
+    Stack,
+    ActionIcon,
+    Loader,
+    Button,
+    Group as MantineGroup,
+    Box,
+    FileButton,
+    Modal,
+    TextInput,
+    ScrollArea,
+    UnstyledButton,
+    Badge,
+} from "@mantine/core";
 
 const GroupInfo = () => {
     const { groupId } = useParams();
     const navigate = useNavigate();
     const { authUser } = useAuthContext();
+
     const [group, setGroup] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [isEditingName, setIsEditingName] = useState(false);
-    const [groupName, setGroupName] = useState("");
-    const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
-
-    // State for image upload
-    const [previewUrl, setPreviewUrl] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
-    const fileInputRef = useRef(null);
+
+    const [isEditingName, setIsEditingName] = useState(false);
+    const [newGroupName, setNewGroupName] = useState("");
+    const [isUpdatingName, setIsUpdatingName] = useState(false);
+
+    const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [users, setUsers] = useState([]);
+    const [searchingUsers, setSearchingUsers] = useState(false);
+
+    useEffect(() => {
+        fetchGroupDetails();
+    }, [groupId]);
 
     const fetchGroupDetails = async () => {
-        if (!groupId) return;
-        setLoading(true);
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/groups/${groupId}`);
+            setLoading(true);
+            const res = await fetch(
+                `${import.meta.env.VITE_API_URL || ""}/api/groups/${groupId}`,
+            );
             const data = await res.json();
             if (data.error) throw new Error(data.error);
             setGroup(data);
-            setGroupName(data.groupName);
+            setNewGroupName(data.groupName);
         } catch (error) {
-            toast.error(error.message);
+            notifications.show({ message: error.message || "Failed to fetch group details", color: "red" });
             navigate("/");
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => {
-        fetchGroupDetails();
-    }, [groupId, navigate]);
+    const handleImageChange = async (file) => {
+        if (!file) return;
 
-    const handleApiResponse = async (apiCall, successMessage) => {
-        try {
-            const res = await apiCall();
-            const data = await res.json();
-            if (data.error) throw new Error(data.error);
-            await fetchGroupDetails();
-            toast.success(successMessage);
-            return data;
-        } catch (error) {
-            toast.error(error.message);
-        }
-    };
-
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setPreviewUrl(URL.createObjectURL(file));
-            handleIconUpload(file);
-        }
-    };
-
-    const handleIconUpload = async (file) => {
         setIsUploading(true);
-        const toastId = toast.loading("Uploading icon...");
         try {
-            const signatureRes = await fetch(`${import.meta.env.VITE_API_URL}/api/cloudinary/signature/group-icon`);
-            const signatureData = await signatureRes.json();
-            if (!signatureRes.ok) throw new Error(signatureData.error || "Failed to get upload signature.");
-
-            const { signature, timestamp, cloudName, apiKey, folder } = signatureData;
             const formData = new FormData();
-            formData.append('file', file);
-            formData.append('api_key', apiKey);
-            formData.append('signature', signature);
-            formData.append('timestamp', timestamp);
-            formData.append('folder', folder);
+            formData.append("profilePic", file);
 
-            const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: 'POST', body: formData });
-            const uploadData = await uploadRes.json();
-            if (!uploadRes.ok) throw new Error(uploadData.error.message || "Cloudinary upload failed.");
-
-            await handleApiResponse(
-                () => fetch(`${import.meta.env.VITE_API_URL}/api/groups/${groupId}/update`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ groupIcon: uploadData.secure_url }),
-                }),
-                "Group icon updated!"
+            const res = await fetch(
+                `${import.meta.env.VITE_API_URL || ""}/api/groups/${groupId}/update-pic`,
+                {
+                    method: "PUT",
+                    body: formData,
+                },
             );
 
-            setPreviewUrl(null);
-            toast.dismiss(toastId);
-        } catch (err) {
-            toast.error(err.message || "Upload failed.", { id: toastId });
-            setPreviewUrl(null);
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+
+            setGroup({ ...group, profilePic: data.profilePic });
+            notifications.show({ message: "Group picture updated", color: "green" });
+        } catch (error) {
+            notifications.show({ message: error.message || "Failed to update group picture", color: "red" });
         } finally {
             setIsUploading(false);
         }
     };
 
-    // ... [other handler functions: handleNameChange, handleRemoveMember, etc.] ...
-    const handleNameChange = async () => {
-        if (groupName === group.groupName) {
+    const handleUpdateName = async () => {
+        if (!newGroupName.trim() || newGroupName === group.groupName) {
             setIsEditingName(false);
             return;
         }
-        await handleApiResponse(
-            () => fetch(`${import.meta.env.VITE_API_URL}/api/groups/${groupId}/update`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ groupName }),
-            }),
-            "Group name updated!"
-        );
-        setIsEditingName(false);
-    };
 
-    const handleRemoveMember = async (userIdToRemove) => {
-        if (userIdToRemove === authUser._id && group.admins.length === 1 && group.participants.length > 1) {
-            return toast.error("You are the last admin. Make someone else an admin before leaving.");
-        }
-        await handleApiResponse(
-            () => fetch(`${import.meta.env.VITE_API_URL}/api/groups/${groupId}/participants/remove`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userIdToRemove }),
-            }),
-            "Member removed!"
-        );
-    };
-
-    const handleMakeAdmin = async (userIdToMakeAdmin) => {
-        await handleApiResponse(
-            () => fetch(`${import.meta.env.VITE_API_URL}/api/groups/${groupId}/admins/add`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userIdToMakeAdmin }),
-            }),
-            "New admin promoted!"
-        );
-    };
-
-    const handleDeleteGroup = async () => {
-        if (!window.confirm("Are you sure you want to delete this group? This action cannot be undone.")) return;
+        setIsUpdatingName(true);
         try {
-            await fetch(`${import.meta.env.VITE_API_URL}/api/groups/${groupId}/delete`, {
-                method: 'DELETE'
-            });
-            toast.success("Group deleted!");
-            navigate("/");
+            const res = await fetch(
+                `${import.meta.env.VITE_API_URL || ""}/api/groups/${groupId}/rename`,
+                {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ groupName: newGroupName }),
+                },
+            );
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+
+            setGroup({ ...group, groupName: data.groupName });
+            notifications.show({ message: "Group name updated", color: "green" });
+            setIsEditingName(false);
         } catch (error) {
-            toast.error(error.message);
+            notifications.show({ message: error.message || "Failed to update group name", color: "red" });
+        } finally {
+            setIsUpdatingName(false);
         }
     };
 
-    if (loading || !group) {
-        return <div className="flex justify-center items-center h-screen"><span className='loading loading-spinner loading-lg'></span></div>;
+    const handleSearchUsers = async (e) => {
+        const query = e.target.value;
+        setSearchQuery(query);
+        if (!query.trim()) {
+            setUsers([]);
+            return;
+        }
+
+        setSearchingUsers(true);
+        try {
+            const res = await fetch(
+                `${import.meta.env.VITE_API_URL || ""}/api/users/search?search=${query}`,
+            );
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+
+            // Filter out existing participants
+            const existingIds = group.participants.map((p) => p._id);
+            const availableUsers = data.filter(
+                (u) => !existingIds.includes(u._id),
+            );
+            setUsers(availableUsers);
+        } catch (error) {
+            notifications.show({ message: error.message || "Failed to search users", color: "red" });
+        } finally {
+            setSearchingUsers(false);
+        }
+    };
+
+    const handleAddMember = async (userId) => {
+        try {
+            const res = await fetch(
+                `${import.meta.env.VITE_API_URL || ""}/api/groups/${groupId}/add`,
+                {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ userId }),
+                },
+            );
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+
+            setGroup(data);
+            setUsers(users.filter((u) => u._id !== userId));
+            notifications.show({ message: "Member added", color: "green" });
+        } catch (error) {
+            notifications.show({ message: error.message || "Failed to add member", color: "red" });
+        }
+    };
+
+    const handleRemoveMember = async (userId) => {
+        try {
+            const res = await fetch(
+                `${import.meta.env.VITE_API_URL || ""}/api/groups/${groupId}/remove`,
+                {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ userId }),
+                },
+            );
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+
+            setGroup(data);
+            notifications.show({ message: "Member removed", color: "green" });
+        } catch (error) {
+            notifications.show({ message: error.message || "Failed to remove member", color: "red" });
+        }
+    };
+
+    if (loading) {
+        return (
+            <Center mih="100vh">
+                <Loader size="lg" />
+            </Center>
+        );
     }
 
-    const isAdmin = group.admins.some(admin => admin._id === authUser._id);
+    if (!group) return null;
+
+    const isAdmin = group.admin === authUser._id;
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen text-white p-4">
-            <div className="w-full max-w-2xl bg-white/5 backdrop-blur-xl border border-white/20 p-8 rounded-2xl shadow-lg relative">
-                <button onClick={() => navigate("/")} className="absolute top-5 left-5 p-2 rounded-full hover:bg-white/10 transition-colors">
-                    <FaArrowLeft size={20} />
-                </button>
-                {isAdmin && (
-                    <div className="absolute top-5 right-5 flex gap-3">
-                        <button onClick={() => setIsAddMemberModalOpen(true)} className="p-2 rounded-full hover:bg-white/10 transition-colors" title="Add Member">
-                            <FaUserPlus size={20} />
-                        </button>
-                        <button onClick={handleDeleteGroup} className="p-2 rounded-full text-red-500 hover:bg-red-500/20 transition-colors" title="Delete Group">
-                            <FaTrash size={20} />
-                        </button>
-                    </div>
-                )}
+        <Center mih="100vh" p="md">
+            <Paper
+                withBorder
+                shadow="md"
+                p={30}
+                radius="md"
+                w="100%"
+                maw={500}
+                style={{ position: "relative" }}
+            >
+                <MantineGroup justify="space-between" align="center" mb="xl">
+                    <ActionIcon variant="subtle" onClick={() => navigate(-1)}>
+                        <FiArrowLeft />
+                    </ActionIcon>
+                    {isAdmin && (
+                        <ActionIcon
+                            variant="light"
+                            onClick={() => setIsAddMemberModalOpen(true)}
+                            title="Add Member"
+                        >
+                            <FiUserPlus />
+                        </ActionIcon>
+                    )}
+                </MantineGroup>
 
-                <div className="flex flex-col items-center text-center pt-8 mb-8">
-                    <div className="relative w-32 h-32 mb-4 group">
-                        <img
-                            src={previewUrl || group.groupIcon || `https://ui-avatars.com/api/?name=${group.groupName}&background=random&bold=true`}
-                            alt={group.groupName}
-                            className="w-32 h-32 rounded-full object-cover border-4 border-blue-500"
+                <Stack align="center" gap="lg" mb="xl">
+                    <Box style={{ position: "relative" }}>
+                        <Avatar
+                            src={group.profilePic}
+                            size={120}
+                            radius={120}
+                            style={{
+                                border: "4px solid var(--mantine-primary-color-filled)",
+                            }}
                         />
                         {isAdmin && (
-                            <div
-                                className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                                onClick={() => !isUploading && fileInputRef.current.click()}
+                            <FileButton
+                                onChange={handleImageChange}
+                                accept="image/png,image/jpeg,image/jpg"
                             >
-                                {isUploading ? <span className="loading loading-spinner"></span> : <FaCamera className="text-white text-3xl" />}
-                            </div>
+                                {(props) => (
+                                    <ActionIcon
+                                        {...props}
+                                        size="lg"
+                                        radius="xl"
+                                        variant="filled"
+                                        loading={isUploading}
+                                        style={{
+                                            position: "absolute",
+                                            bottom: 0,
+                                            right: 0,
+                                            boxShadow:
+                                                "var(--mantine-shadow-sm)",
+                                        }}
+                                    >
+                                        {!isUploading && <FiCamera size={16} />}
+                                    </ActionIcon>
+                                )}
+                            </FileButton>
                         )}
-                    </div>
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleFileChange}
-                        className="hidden"
-                        accept="image/png, image/jpeg, image/gif"
-                        disabled={isUploading}
-                    />
-                    <div className="flex flex-col items-center gap-2 mt-2">
-                        {isEditingName ? (
-                            <input type="text" value={groupName} onChange={(e) => setGroupName(e.target.value)} onBlur={handleNameChange} onKeyDown={(e) => e.key === 'Enter' && handleNameChange()} className="text-3xl font-bold bg-gray-700/50 text-center rounded-md p-1" autoFocus />
-                        ) : (
-                            <h1 className="text-3xl font-bold flex items-center gap-3">
-                                {group.groupName}
-                                {isAdmin && <FaEdit onClick={() => setIsEditingName(true)} className="cursor-pointer text-xl text-gray-400 hover:text-white transition-colors" />}
-                            </h1>
-                        )}
-                        <p className="text-gray-400">{group.participants.length} members</p>
-                    </div>
-                </div>
+                    </Box>
 
-                <h3 className="text-xl font-semibold mb-4 border-b border-gray-600 pb-2">Members</h3>
-                <div className="max-h-80 overflow-y-auto space-y-2 pr-2">
-                    {group.participants.map(p => {
-                        const isParticipantAdmin = group.admins.some(admin => admin._id === p._id);
-                        return (
-                            <div key={p._id} className="flex items-center p-3 rounded-lg hover:bg-gray-700/50 group transition-colors">
-                                <img src={p.profilePic} alt={p.fullName} className="w-12 h-12 rounded-full mr-4" />
-                                <span className="flex-grow text-lg font-medium">{p.fullName}</span>
-                                {isParticipantAdmin && (
-                                    <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded-full mr-4 font-semibold">Admin</span>
-                                )}
-                                {isAdmin && p._id !== authUser._id && (
-                                    <div className="hidden group-hover:flex items-center gap-2">
-                                        {!isParticipantAdmin && (
-                                            <button onClick={() => handleMakeAdmin(p._id)} className="p-2 text-green-400 hover:bg-white/10 rounded-full transition-colors" title="Make Admin">
-                                                <FaCrown />
-                                            </button>
-                                        )}
-                                        <button onClick={() => handleRemoveMember(p._id)} className="p-2 text-red-500 hover:bg-white/10 rounded-full transition-colors" title="Remove Member">
-                                            <FaUserMinus />
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
-            {isAddMemberModalOpen && <AddMemberModal group={group} onClose={() => setIsAddMemberModalOpen(false)} onMemberAdded={fetchGroupDetails} />}
-        </div>
+                    {isEditingName ? (
+                        <MantineGroup gap="xs">
+                            <TextInput
+                                value={newGroupName}
+                                onChange={(e) =>
+                                    setNewGroupName(e.target.value)
+                                }
+                                autoFocus
+                            />
+                            <Button
+                                size="sm"
+                                loading={isUpdatingName}
+                                onClick={handleUpdateName}
+                            >
+                                Save
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant="default"
+                                onClick={() => setIsEditingName(false)}
+                            >
+                                Cancel
+                            </Button>
+                        </MantineGroup>
+                    ) : (
+                        <MantineGroup gap="xs" align="center">
+                            <Title order={2} ta="center">
+                                {group.groupName}
+                            </Title>
+                            {isAdmin && (
+                                <ActionIcon
+                                    variant="subtle"
+                                    color="gray"
+                                    onClick={() => setIsEditingName(true)}
+                                >
+                                    <FiEdit2 />
+                                </ActionIcon>
+                            )}
+                        </MantineGroup>
+                    )}
+                    <Text size="sm" c="dimmed">
+                        {group.participants.length} members
+                    </Text>
+                </Stack>
+
+                <Title order={4} mb="md">
+                    Members
+                </Title>
+                <ScrollArea h={300} offsetScrollbars>
+                    <Stack gap="xs">
+                        {group.participants.map((participant) => {
+                            const isParticipantAdmin =
+                                participant._id === group.admin;
+                            return (
+                                <Paper
+                                    key={participant._id}
+                                    p="sm"
+                                    withBorder
+                                    radius="md"
+                                >
+                                    <MantineGroup
+                                        justify="space-between"
+                                        wrap="nowrap"
+                                    >
+                                        <MantineGroup gap="sm" wrap="nowrap">
+                                            <Avatar
+                                                src={participant.profilePic}
+                                                radius="xl"
+                                            />
+                                            <Stack gap={0}>
+                                                <Text size="sm" fw={500}>
+                                                    {participant.fullName}{" "}
+                                                    {participant._id ===
+                                                        authUser._id && "(You)"}
+                                                </Text>
+                                                <Text size="xs" c="dimmed">
+                                                    @{participant.username}
+                                                </Text>
+                                            </Stack>
+                                        </MantineGroup>
+                                        <MantineGroup gap="xs">
+                                            {isParticipantAdmin && (
+                                                <Badge
+                                                    color="blue"
+                                                    size="sm"
+                                                    variant="light"
+                                                >
+                                                    Admin
+                                                </Badge>
+                                            )}
+                                            {isAdmin && !isParticipantAdmin && (
+                                                <ActionIcon
+                                                    variant="light"
+                                                    color="red"
+                                                    onClick={() =>
+                                                        handleRemoveMember(
+                                                            participant._id,
+                                                        )
+                                                    }
+                                                    title="Remove Member"
+                                                >
+                                                    <FiTrash2 size={12} />
+                                                </ActionIcon>
+                                            )}
+                                        </MantineGroup>
+                                    </MantineGroup>
+                                </Paper>
+                            );
+                        })}
+                    </Stack>
+                </ScrollArea>
+            </Paper>
+
+            <Modal
+                opened={isAddMemberModalOpen}
+                onClose={() => {
+                    setIsAddMemberModalOpen(false);
+                    setSearchQuery("");
+                    setUsers([]);
+                }}
+                title="Add Members"
+                centered
+            >
+                <TextInput
+                    placeholder="Search users..."
+                    value={searchQuery}
+                    onChange={handleSearchUsers}
+                    mb="md"
+                />
+
+                <ScrollArea h={300} offsetScrollbars>
+                    {searchingUsers ? (
+                        <Center h={100}>
+                            <Loader size="sm" />
+                        </Center>
+                    ) : users.length > 0 ? (
+                        <Stack gap="xs">
+                            {users.map((user) => (
+                                <UnstyledButton
+                                    key={user._id}
+                                    w="100%"
+                                    p="sm"
+                                    style={(theme) => ({
+                                        borderRadius: theme.radius.md,
+                                        "&:hover": {
+                                            backgroundColor:
+                                                "var(--mantine-color-default-hover)",
+                                        },
+                                    })}
+                                    onClick={() => handleAddMember(user._id)}
+                                >
+                                    <MantineGroup justify="space-between">
+                                        <MantineGroup gap="sm">
+                                            <Avatar
+                                                src={user.profilePic}
+                                                radius="xl"
+                                            />
+                                            <Text size="sm" fw={500}>
+                                                {user.fullName}
+                                            </Text>
+                                        </MantineGroup>
+                                        <Button size="xs" variant="light">
+                                            Add
+                                        </Button>
+                                    </MantineGroup>
+                                </UnstyledButton>
+                            ))}
+                        </Stack>
+                    ) : (
+                        searchQuery && (
+                            <Text ta="center" c="dimmed" mt="md">
+                                No users found
+                            </Text>
+                        )
+                    )}
+                </ScrollArea>
+            </Modal>
+        </Center>
     );
 };
 

@@ -1,20 +1,23 @@
+import { Group, Skeleton, Stack } from "@mantine/core";
+
 const MessageSkeleton = () => {
-	return (
-		<>
-			<div className='flex gap-3 items-center'>
-				<div className='skeleton w-10 h-10 rounded-full shrink-0'></div>
-				<div className='flex flex-col gap-1'>
-					<div className='skeleton h-4 w-40'></div>
-					<div className='skeleton h-4 w-40'></div>
-				</div>
-			</div>
-			<div className='flex gap-3 items-center justify-end'>
-				<div className='flex flex-col gap-1'>
-					<div className='skeleton h-4 w-40'></div>
-				</div>
-				<div className='skeleton w-10 h-10 rounded-full shrink-0'></div>
-			</div>
-		</>
-	);
+    return (
+        <>
+            <Group align="flex-start" gap="sm" mb="md">
+                <Skeleton circle height={40} />
+                <Stack gap="xs">
+                    <Skeleton height={16} width={160} radius="xl" />
+                    <Skeleton height={16} width={160} radius="xl" />
+                </Stack>
+            </Group>
+            <Group align="flex-start" gap="sm" justify="flex-end" mb="md">
+                <Stack gap="xs" align="flex-end">
+                    <Skeleton height={16} width={160} radius="xl" />
+                </Stack>
+                <Skeleton circle height={40} />
+            </Group>
+        </>
+    );
 };
+
 export default MessageSkeleton;

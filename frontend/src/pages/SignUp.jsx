@@ -1,6 +1,6 @@
-import { Link } from "react-router-dom";
 import { useState } from "react";
-import { FaUser, FaUserCircle, FaLock } from "react-icons/fa";
+import { Link } from "react-router-dom";
+import { FiUser, FiAtSign, FiLock } from "react-icons/fi";
 import {
     Center,
     Paper,
@@ -21,6 +21,7 @@ const SignUp = () => {
         confirmPassword: "",
     });
     const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const { loading, signup } = useSignup();
 
     const handleSubmit = async (e) => {
@@ -33,53 +34,75 @@ const SignUp = () => {
             <Paper withBorder shadow="md" p={30} radius="md" w="100%" maw={400}>
                 <Title order={2} ta="center" mb="xl">
                     Sign Up{" "}
-                    <Text span c="primary">
+                    <Text span c="var(--mantine-primary-color-filled)">
                         ChatApp
                     </Text>
                 </Title>
 
                 <form onSubmit={handleSubmit}>
                     <Stack gap="md">
-                        <InputField
+                        <TextInput
                             label="Full Name"
-                            icon={<FaUserCircle size={14} />}
+                            leftSection={<FiUser size={14} />}
                             value={inputs.fullName}
-                            onChange={(val) =>
-                                setInputs({ ...inputs, fullName: val })
+                            onChange={(e) =>
+                                setInputs({
+                                    ...inputs,
+                                    fullName: e.currentTarget.value,
+                                })
                             }
                             placeholder="John Doe"
+                            required
                         />
 
-                        <InputField
+                        <TextInput
                             label="Username"
-                            icon={<FaUser size={14} />}
+                            leftSection={<FiAtSign size={14} />}
                             value={inputs.username}
-                            onChange={(val) =>
-                                setInputs({ ...inputs, username: val })
+                            onChange={(e) =>
+                                setInputs({
+                                    ...inputs,
+                                    username: e.currentTarget.value,
+                                })
                             }
                             placeholder="johndoe"
+                            required
                         />
 
-                        <PasswordField
+                        <PasswordInput
                             label="Password"
-                            show={showPassword}
-                            onToggle={() => setShowPassword(!showPassword)}
-                            value={inputs.password}
-                            onChange={(val) =>
-                                setInputs({ ...inputs, password: val })
+                            leftSection={<FiLock size={14} />}
+                            visible={showPassword}
+                            onVisibilityChange={() =>
+                                setShowPassword(!showPassword)
                             }
-                            placeholder="Enter Password"
-                            toggle={true}
+                            value={inputs.password}
+                            onChange={(e) =>
+                                setInputs({
+                                    ...inputs,
+                                    password: e.currentTarget.value,
+                                })
+                            }
+                            placeholder="Enter password"
+                            required
                         />
 
-                        <PasswordField
+                        <PasswordInput
                             label="Confirm Password"
-                            value={inputs.confirmPassword}
-                            onChange={(val) =>
-                                setInputs({ ...inputs, confirmPassword: val })
+                            leftSection={<FiLock size={14} />}
+                            visible={showConfirmPassword}
+                            onVisibilityChange={() =>
+                                setShowConfirmPassword(!showConfirmPassword)
                             }
-                            placeholder="Confirm Password"
-                            toggle={false}
+                            value={inputs.confirmPassword}
+                            onChange={(e) =>
+                                setInputs({
+                                    ...inputs,
+                                    confirmPassword: e.currentTarget.value,
+                                })
+                            }
+                            placeholder="Confirm password"
+                            required
                         />
 
                         <Text
@@ -106,51 +129,6 @@ const SignUp = () => {
                 </form>
             </Paper>
         </Center>
-    );
-};
-
-const InputField = ({ label, icon, value, onChange, placeholder }) => (
-    <TextInput
-        label={label}
-        leftSection={icon}
-        value={value}
-        onChange={(e) => onChange(e.currentTarget.value)}
-        placeholder={placeholder}
-    />
-);
-
-const PasswordField = ({
-    label,
-    show,
-    onToggle,
-    value,
-    onChange,
-    placeholder,
-    toggle,
-}) => {
-    if (!toggle) {
-        return (
-            <TextInput
-                type="password"
-                label={label}
-                leftSection={<FaLock size={14} />}
-                value={value}
-                onChange={(e) => onChange(e.currentTarget.value)}
-                placeholder={placeholder}
-            />
-        );
-    }
-
-    return (
-        <PasswordInput
-            label={label}
-            leftSection={<FaLock size={14} />}
-            visible={show}
-            onVisibilityChange={onToggle}
-            value={value}
-            onChange={(e) => onChange(e.currentTarget.value)}
-            placeholder={placeholder}
-        />
     );
 };
 

@@ -2,19 +2,24 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
-import { Toaster } from "react-hot-toast";
 import { useAuthContext } from "./context/AuthContext";
 import ProfilePage from "./pages/Profile";
 import UserProfilePage from "./pages/UserProfile";
 import GroupInfo from "./pages/GroupInfo";
+import { Box } from "@mantine/core";
 
 function App() {
     const { authUser } = useAuthContext();
 
-    console.log(authUser);
-
     return (
-        <div className="p-4 h-screen flex items-center justify-center">
+        <Box
+            style={{
+                minHeight: "100vh",
+                // Provides a slightly tinted background depending on light/dark mode
+                backgroundColor:
+                    "light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-8))",
+            }}
+        >
             <Routes>
                 <Route
                     path="/"
@@ -51,8 +56,7 @@ function App() {
                     }
                 />
             </Routes>
-            <Toaster />
-        </div>
+        </Box>
     );
 }
 

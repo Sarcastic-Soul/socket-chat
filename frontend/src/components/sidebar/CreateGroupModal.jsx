@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { notifications } from "@mantine/notifications";
-import useConversation from "../../zustand/useConversation";
 import {
     Modal,
     TextInput,
@@ -22,7 +21,6 @@ const CreateGroupModal = ({ onClose }) => {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedUsers, setSelectedUsers] = useState([]);
     const [loading, setLoading] = useState(false);
-    const { addConversation } = useConversation();
 
     useEffect(() => {
         const fetchUsers = async () => {

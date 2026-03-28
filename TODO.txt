@@ -6,13 +6,6 @@ Good idea—but do it *properly*:
 * Store only encrypted messages in DB
 * Keys managed client-side
 ---
-
-## 12. 📡 Rate Limiting + Abuse Protection
-
-* Limit messages/sec per user
-* Prevent spam/flood attacks
-
-
 Future Ideas:
 
 ## 5. Voice & Video Calling

@@ -2,6 +2,7 @@ import Conversation from "../models/conversation.model.js";
 import Message from "../models/message.model.js";
 import User from "../models/user.model.js";
 import { getReceiverSocketId, io } from "../socket/socket.js";
+import { encryptText, decryptText } from "../utils/encryption.js";
 
 export const sendMessage = async (req, res) => {
     try {
@@ -45,7 +46,7 @@ export const sendMessage = async (req, res) => {
         const newMessage = new Message({
             senderId,
             receiverId: conversation._id,
-            message: message || "",
+            message: message ? encryptText(message) : "",
             mediaUrl: mediaUrl || null,
             mediaType: mediaType || "text",
         });
@@ -58,6 +59,11 @@ export const sendMessage = async (req, res) => {
             "senderId",
             "fullName profilePic username isPublic",
         );
+
+        // Decrypt message before sending to sockets/frontend
+        if (populatedMessage.message) {
+            populatedMessage.message = decryptText(populatedMessage.message);
+        }
 
         if (conversation.isGroupChat) {
             io.to(conversation._id.toString()).emit(
@@ -120,7 +126,13 @@ export const getMessages = async (req, res) => {
             .limit(parseInt(limit))
             .lean();
 
-        res.status(200).json(messages);
+        // Decrypt all messages before sending to client
+        const decryptedMessages = messages.map((msg) => ({
+            ...msg,
+            message: msg.message ? decryptText(msg.message) : "",
+        }));
+
+        res.status(200).json(decryptedMessages);
     } catch (error) {
         console.error("Error in getMessages controller:", error.message);
         res.status(500).json({ error: "Internal server error" });
@@ -134,11 +146,9 @@ export const markMessagesAsRead = async (req, res) => {
 
         const conversation = await Conversation.findById(conversationId);
         if (!conversation || !conversation.participants.includes(userId)) {
-            return res
-                .status(404)
-                .json({
-                    error: "Conversation not found or you are not a member.",
-                });
+            return res.status(404).json({
+                error: "Conversation not found or you are not a member.",
+            });
         }
 
         await Message.updateMany(
@@ -209,6 +219,11 @@ export const addReaction = async (req, res) => {
 
         await message.save();
 
+        const messageObj = message.toObject();
+        if (messageObj.message) {
+            messageObj.message = decryptText(messageObj.message);
+        }
+
         const conversation = await Conversation.findOne({
             messages: messageId,
         });
@@ -219,16 +234,16 @@ export const addReaction = async (req, res) => {
             );
             const receiverSocketId = getReceiverSocketId(receiverId);
             if (receiverSocketId) {
-                io.to(receiverSocketId).emit("messageReaction", message);
+                io.to(receiverSocketId).emit("messageReaction", messageObj);
             }
 
             const senderSocketId = getReceiverSocketId(userId);
             if (senderSocketId && senderSocketId !== receiverSocketId) {
-                io.to(senderSocketId).emit("messageReaction", message);
+                io.to(senderSocketId).emit("messageReaction", messageObj);
             }
         }
 
-        res.status(200).json(message);
+        res.status(200).json(messageObj);
     } catch (error) {
         console.error("Error in addReaction controller: ", error.message);
         res.status(500).json({ error: "Internal server error" });

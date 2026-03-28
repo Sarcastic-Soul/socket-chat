@@ -6,8 +6,15 @@ import ProfileButton from "./ProfileButton";
 import CreateGroupModal from "./CreateGroupModal";
 import StartChatModal from "../modals/StartChatModal";
 import ThemeToggle from "../ThemeToggle";
-import { FiPlusCircle } from "react-icons/fi";
-import { Stack, Group, Divider, ActionIcon, Button } from "@mantine/core";
+import { FiPlus, FiMessageSquare, FiUsers } from "react-icons/fi";
+import {
+    Stack,
+    Group,
+    Divider,
+    ActionIcon,
+    Menu,
+    Box,
+} from "@mantine/core";
 
 const Sidebar = () => {
     const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
@@ -20,7 +27,38 @@ const Sidebar = () => {
             gap="sm"
             style={{ backgroundColor: "var(--mantine-color-body)" }}
         >
-            <SearchInput />
+            <Group wrap="nowrap" gap="sm">
+                <Box style={{ flex: 1 }}>
+                    <SearchInput />
+                </Box>
+                <Menu shadow="md" width={200} position="bottom-end">
+                    <Menu.Target>
+                        <ActionIcon
+                            variant="filled"
+                            size={42}
+                            radius="xl"
+                            title="Create New"
+                        >
+                            <FiPlus size={22} />
+                        </ActionIcon>
+                    </Menu.Target>
+                    <Menu.Dropdown>
+                        <Menu.Label>Create</Menu.Label>
+                        <Menu.Item
+                            leftSection={<FiMessageSquare size={16} />}
+                            onClick={() => setIsStartChatModalOpen(true)}
+                        >
+                            New Chat
+                        </Menu.Item>
+                        <Menu.Item
+                            leftSection={<FiUsers size={16} />}
+                            onClick={() => setIsGroupModalOpen(true)}
+                        >
+                            New Group
+                        </Menu.Item>
+                    </Menu.Dropdown>
+                </Menu>
+            </Group>
             <Divider />
 
             <Conversations />
@@ -29,26 +67,9 @@ const Sidebar = () => {
                 <Group gap="md">
                     <LogoutButton />
                     <ProfileButton />
-                    <ThemeToggle />
                 </Group>
 
-                <Group gap="xs">
-                    <ActionIcon
-                        variant="subtle"
-                        size="lg"
-                        radius="xl"
-                        onClick={() => setIsStartChatModalOpen(true)}
-                        title="Start New Chat"
-                    >
-                        <FiPlusCircle size={22} />
-                    </ActionIcon>
-                    <Button
-                        radius="xl"
-                        onClick={() => setIsGroupModalOpen(true)}
-                    >
-                        New Group
-                    </Button>
-                </Group>
+                <ThemeToggle />
             </Group>
 
             {isGroupModalOpen && (

@@ -29,7 +29,7 @@ const Login = () => {
             <Paper withBorder shadow="md" p={30} radius="md" w="100%" maw={400}>
                 <Title order={2} ta="center" mb="xl">
                     Login{" "}
-                    <Text span c="var(--mantine-primary-color-filled)">
+                    <Text span c="var(--mantine-primary-color-filled)" inherit>
                         ChatApp
                     </Text>
                 </Title>

@@ -118,10 +118,9 @@ const Message = ({ message }) => {
                         bg={
                             fromMe
                                 ? "var(--mantine-primary-color-filled)"
-                                : "var(--mantine-color-default)"
+                                : "light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6))"
                         }
                         c={fromMe ? "white" : "var(--mantine-color-text)"}
-                        withBorder={!fromMe}
                         style={{
                             borderBottomRightRadius: fromMe ? 4 : undefined,
                             borderBottomLeftRadius: !fromMe ? 4 : undefined,

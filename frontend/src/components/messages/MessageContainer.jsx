@@ -105,16 +105,6 @@ const MessageContainer = () => {
                                     <FiVideo size={20} />
                                 </ActionIcon>
                             )}
-                            {selectedConversation.isGroupChat && (
-                                <ActionIcon
-                                    variant="subtle"
-                                    radius="xl"
-                                    size="lg"
-                                    onClick={handleHeaderClick}
-                                >
-                                    <FiUsers size={18} />
-                                </ActionIcon>
-                            )}
                         </Group>
                     </Group>
 
@@ -136,12 +126,16 @@ const NoChatSelected = () => {
                 <Text size="xl" fw={600} ta="center">
                     Welcome 👋 {authUser.fullName}
                 </Text>
-                <Text size="lg" ta="center" c="dimmed">
-                    Select a chat to start messaging
+                <Text size="md" ta="center" c="dimmed">
+                    Select a conversation from the sidebar to start messaging
                 </Text>
                 <FiMessageSquare
-                    size={60}
-                    style={{ color: "var(--mantine-color-dimmed)" }}
+                    size={50}
+                    style={{
+                        color: "var(--mantine-primary-color-light-color)",
+                        opacity: 0.6,
+                        marginTop: 10,
+                    }}
                 />
             </Stack>
         </Center>

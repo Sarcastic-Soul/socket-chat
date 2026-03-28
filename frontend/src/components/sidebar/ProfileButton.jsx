@@ -17,7 +17,14 @@ const ProfileButton = () => {
             size="xl"
             radius="xl"
         >
-            <Avatar src={authUser?.profilePic} alt="Profile" radius="xl">
+            <Avatar
+                src={authUser?.profilePic}
+                alt="Profile"
+                radius="xl"
+                style={{
+                    border: "2px solid var(--mantine-primary-color-filled)",
+                }}
+            >
                 {/* Fallback text handled natively by Mantine if src is invalid/null */}
                 {authUser?.username
                     ? authUser.username.charAt(0).toUpperCase()

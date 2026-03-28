@@ -26,7 +26,9 @@ const MessageContainer = () => {
     }, [setSelectedConversation]);
 
     const isOnline =
-        selectedConversation && !selectedConversation.isGroupChat
+        selectedConversation &&
+        !selectedConversation.isGroupChat &&
+        selectedConversation.isPublic !== false
             ? onlineUsers.includes(selectedConversation.participantId)
             : false;
 
@@ -71,14 +73,15 @@ const MessageContainer = () => {
                                 <Text fw={600} size="md">
                                     {displayName}
                                 </Text>
-                                {!selectedConversation.isGroupChat && (
-                                    <Text
-                                        size="xs"
-                                        c={isOnline ? "green" : "dimmed"}
-                                    >
-                                        {isOnline ? "Online" : "Offline"}
-                                    </Text>
-                                )}
+                                {!selectedConversation.isGroupChat &&
+                                    selectedConversation.isPublic !== false && (
+                                        <Text
+                                            size="xs"
+                                            c={isOnline ? "green" : "dimmed"}
+                                        >
+                                            {isOnline ? "Online" : "Offline"}
+                                        </Text>
+                                    )}
                             </Stack>
                         </Group>
                         {selectedConversation.isGroupChat && (

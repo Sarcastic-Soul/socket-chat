@@ -10,13 +10,16 @@ export const getUsersForNewChat = async (req, res) => {
             participants: loggedInUserId,
         }).select("participants");
 
-        const existingParticipantIds = existingConversations.flatMap(conv =>
-            conv.participants.filter(p => !p.equals(loggedInUserId))
+        const existingParticipantIds = existingConversations.flatMap((conv) =>
+            conv.participants.filter((p) => !p.equals(loggedInUserId)),
         );
 
         const idsToExclude = [loggedInUserId, ...existingParticipantIds];
 
-        const users = await User.find({ _id: { $nin: idsToExclude } }).select("-password");
+        const users = await User.find({
+            _id: { $nin: idsToExclude },
+            isPublic: { $ne: false },
+        }).select("-password");
 
         res.status(200).json(users);
     } catch (error) {
@@ -28,9 +31,11 @@ export const getConversations = async (req, res) => {
     try {
         const loggedInUserId = req.user._id;
 
-        const conversations = await Conversation.find({ participants: loggedInUserId }).populate({
+        const conversations = await Conversation.find({
+            participants: loggedInUserId,
+        }).populate({
             path: "participants",
-            select: "fullName profilePic username",
+            select: "fullName profilePic username isPublic",
         });
 
         const formattedConversations = conversations.reduce((acc, conv) => {
@@ -39,12 +44,16 @@ export const getConversations = async (req, res) => {
                     _id: conv._id,
                     isGroupChat: true,
                     groupName: conv.groupName,
-                    profilePic: conv.groupIcon || `https://ui-avatars.com/api/?name=${conv.groupName}&background=random&bold=true`,
+                    profilePic:
+                        conv.groupIcon ||
+                        `https://ui-avatars.com/api/?name=${conv.groupName}&background=random&bold=true`,
                     participants: conv.participants,
                     admins: conv.admins,
                 });
             } else {
-                const otherParticipant = conv.participants.find(p => p._id.toString() !== loggedInUserId.toString());
+                const otherParticipant = conv.participants.find(
+                    (p) => p._id.toString() !== loggedInUserId.toString(),
+                );
 
                 if (otherParticipant) {
                     acc.push({
@@ -53,7 +62,8 @@ export const getConversations = async (req, res) => {
                         fullName: otherParticipant.fullName,
                         profilePic: otherParticipant.profilePic,
                         participantId: otherParticipant._id,
-                        username: otherParticipant.username
+                        username: otherParticipant.username,
+                        isPublic: otherParticipant.isPublic
                     });
                 }
             }
@@ -67,12 +77,14 @@ export const getConversations = async (req, res) => {
     }
 };
 
-
 export const getUsersForSidebar = async (req, res) => {
     try {
         const loggedInUserId = req.user._id;
 
-        const filteredUsers = await User.find({ _id: { $ne: loggedInUserId } }).select("-password");
+        const filteredUsers = await User.find({
+            _id: { $ne: loggedInUserId },
+            isPublic: { $ne: false },
+        }).select("-password");
 
         res.status(200).json(filteredUsers);
     } catch (error) {
@@ -97,20 +109,21 @@ export const getUserByUsername = async (req, res) => {
     }
 };
 
-
 export const updateUserProfilePic = async (req, res) => {
     try {
         const { profilePic } = req.body;
         const userId = req.user._id;
 
         if (!profilePic) {
-            return res.status(400).json({ error: "No profile picture URL provided." });
+            return res
+                .status(400)
+                .json({ error: "No profile picture URL provided." });
         }
 
         const updatedUser = await User.findByIdAndUpdate(
             userId,
             { profilePic: profilePic },
-            { new: true }
+            { new: true },
         ).select("-password");
 
         if (!updatedUser) {
@@ -118,9 +131,37 @@ export const updateUserProfilePic = async (req, res) => {
         }
 
         res.status(200).json(updatedUser);
-
     } catch (error) {
-        console.error("Error in updateUserProfilePic controller: ", error.message);
+        console.error(
+            "Error in updateUserProfilePic controller: ",
+            error.message,
+        );
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};
+
+export const updatePrivacy = async (req, res) => {
+    try {
+        const { isPublic } = req.body;
+        const userId = req.user._id;
+
+        if (typeof isPublic !== "boolean") {
+            return res.status(400).json({ error: "Invalid privacy setting." });
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { isPublic },
+            { new: true },
+        ).select("-password");
+
+        if (!updatedUser) {
+            return res.status(404).json({ error: "User not found." });
+        }
+
+        res.status(200).json(updatedUser);
+    } catch (error) {
+        console.error("Error in updatePrivacy controller: ", error.message);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };

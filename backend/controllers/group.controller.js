@@ -5,14 +5,18 @@ export const getGroupDetails = async (req, res) => {
         const { groupId } = req.params;
         const userId = req.user._id;
 
-        const group = await Conversation.findById(groupId).populate("participants", "fullName profilePic username").populate("admins", "fullName");
+        const group = await Conversation.findById(groupId)
+            .populate("participants", "fullName profilePic username")
+            .populate("admins", "fullName");
 
         if (!group) {
             return res.status(404).json({ error: "Group not found" });
         }
 
-        if (!group.participants.some(p => p._id.equals(userId))) {
-            return res.status(403).json({ error: "You are not a member of this group." });
+        if (!group.participants.some((p) => p._id.equals(userId))) {
+            return res
+                .status(403)
+                .json({ error: "You are not a member of this group." });
         }
 
         res.status(200).json(group);
@@ -28,7 +32,27 @@ export const createGroup = async (req, res) => {
         const userId = req.user._id;
 
         if (!name || !participants || participants.length < 1) {
-            return res.status(400).json({ error: "Please provide a group name and at least one participant." });
+            return res.status(400).json({
+                error: "Please provide a group name and at least one participant.",
+            });
+        }
+
+        const { default: User } = await import("../models/user.model.js");
+
+        for (const pId of participants) {
+            const userToInclude = await User.findById(pId);
+            if (!userToInclude) {
+                return res
+                    .status(404)
+                    .json({ error: `User with ID ${pId} not found.` });
+            }
+            if (userToInclude.isPublic === false) {
+                return res
+                    .status(403)
+                    .json({
+                        error: `Cannot include private user ${userToInclude.username} in a new group.`,
+                    });
+            }
         }
 
         const allParticipants = [...participants, userId];
@@ -57,7 +81,10 @@ export const updateGroup = async (req, res) => {
         const group = await Conversation.findById(groupId);
 
         if (!group) return res.status(404).json({ error: "Group not found" });
-        if (!group.admins.includes(userId)) return res.status(403).json({ error: "Only admins can update the group." });
+        if (!group.admins.includes(userId))
+            return res
+                .status(403)
+                .json({ error: "Only admins can update the group." });
 
         if (groupName) group.groupName = groupName;
         if (groupIcon) group.groupIcon = groupIcon;
@@ -78,7 +105,10 @@ export const deleteGroup = async (req, res) => {
         const group = await Conversation.findById(groupId);
 
         if (!group) return res.status(404).json({ error: "Group not found" });
-        if (!group.admins.includes(userId)) return res.status(403).json({ error: "Only admins can delete the group." });
+        if (!group.admins.includes(userId))
+            return res
+                .status(403)
+                .json({ error: "Only admins can delete the group." });
 
         await Conversation.findByIdAndDelete(groupId);
         res.status(200).json({ message: "Group deleted successfully" });
@@ -101,7 +131,9 @@ export const updateGroupName = async (req, res) => {
         }
 
         if (!group.admins.includes(userId)) {
-            return res.status(403).json({ error: "Only admins can update the group name." });
+            return res
+                .status(403)
+                .json({ error: "Only admins can update the group name." });
         }
 
         group.groupName = name;
@@ -126,11 +158,28 @@ export const addParticipant = async (req, res) => {
         }
 
         if (!group.admins.includes(userId)) {
-            return res.status(403).json({ error: "Only admins can add participants." });
+            return res
+                .status(403)
+                .json({ error: "Only admins can add participants." });
         }
 
         if (group.participants.includes(userIdToAdd)) {
-            return res.status(400).json({ error: "User is already in the group." });
+            return res
+                .status(400)
+                .json({ error: "User is already in the group." });
+        }
+
+        const { default: User } = await import("../models/user.model.js");
+        const userToAdd = await User.findById(userIdToAdd);
+
+        if (!userToAdd) {
+            return res.status(404).json({ error: "User to add not found." });
+        }
+
+        if (userToAdd.isPublic === false) {
+            return res
+                .status(403)
+                .json({ error: "Cannot add a private user to the group." });
         }
 
         group.participants.push(userIdToAdd);
@@ -143,31 +192,37 @@ export const addParticipant = async (req, res) => {
 };
 
 export const removeParticipant = async (req, res) => {
-	try {
-		const { groupId } = req.params;
-		const { userIdToRemove } = req.body;
-		const userId = req.user._id;
+    try {
+        const { groupId } = req.params;
+        const { userIdToRemove } = req.body;
+        const userId = req.user._id;
 
-		const group = await Conversation.findById(groupId);
+        const group = await Conversation.findById(groupId);
 
-		if (!group) {
-			return res.status(404).json({ error: "Group not found" });
-		}
+        if (!group) {
+            return res.status(404).json({ error: "Group not found" });
+        }
 
-		if (!group.admins.includes(userId)) {
-			return res.status(403).json({ error: "Only admins can remove participants." });
-		}
+        if (!group.admins.includes(userId)) {
+            return res
+                .status(403)
+                .json({ error: "Only admins can remove participants." });
+        }
 
-		group.participants = group.participants.filter(p => p.toString() !== userIdToRemove);
+        group.participants = group.participants.filter(
+            (p) => p.toString() !== userIdToRemove,
+        );
 
-        group.admins = group.admins.filter(adminId => adminId.toString() !== userIdToRemove);
+        group.admins = group.admins.filter(
+            (adminId) => adminId.toString() !== userIdToRemove,
+        );
 
-		await group.save();
-		res.status(200).json(group);
-	} catch (error) {
-		console.error("Error in removeParticipant: ", error.message);
-		res.status(500).json({ error: "Internal server error" });
-	}
+        await group.save();
+        res.status(200).json(group);
+    } catch (error) {
+        console.error("Error in removeParticipant: ", error.message);
+        res.status(500).json({ error: "Internal server error" });
+    }
 };
 
 export const makeAdmin = async (req, res) => {
@@ -183,7 +238,9 @@ export const makeAdmin = async (req, res) => {
         }
 
         if (!group.admins.includes(userId)) {
-            return res.status(403).json({ error: "Only admins can make other users admins." });
+            return res
+                .status(403)
+                .json({ error: "Only admins can make other users admins." });
         }
 
         if (group.admins.includes(userIdToMakeAdmin)) {

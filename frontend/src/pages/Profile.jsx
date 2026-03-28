@@ -3,7 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../context/AuthContext";
 import useGetUserDetails from "../hooks/useGetUserDetails";
 import { notifications } from "@mantine/notifications";
-import { FiCamera, FiArrowLeft, FiCalendar, FiUser } from "react-icons/fi";
+import {
+    FiCamera,
+    FiArrowLeft,
+    FiCalendar,
+    FiUser,
+    FiGlobe,
+    FiLock,
+} from "react-icons/fi";
 import {
     Center,
     Paper,
@@ -17,6 +24,7 @@ import {
     Loader,
     Group,
     ThemeIcon,
+    Switch,
 } from "@mantine/core";
 
 const Profile = () => {
@@ -24,6 +32,7 @@ const Profile = () => {
     const { userDetails, loading } = useGetUserDetails();
     const [previewUrl, setPreviewUrl] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
+    const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
     const navigate = useNavigate();
 
     const handleImageChange = async (file) => {
@@ -87,6 +96,37 @@ const Profile = () => {
             setPreviewUrl(null); // Revert preview on failure
         } finally {
             setIsUploading(false);
+        }
+    };
+
+    const handlePrivacyToggle = async (event) => {
+        const newIsPublic = event.currentTarget.checked;
+        setIsUpdatingPrivacy(true);
+        try {
+            const res = await fetch(
+                `${import.meta.env.VITE_API_URL || ""}/api/users/privacy`,
+                {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ isPublic: newIsPublic }),
+                },
+            );
+
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+
+            setAuthUser({ ...authUser, isPublic: data.isPublic });
+            notifications.show({
+                message: `Profile is now ${data.isPublic ? "Public" : "Private"}`,
+                color: "green",
+            });
+        } catch (error) {
+            notifications.show({
+                message: error.message || "Failed to update privacy settings",
+                color: "red",
+            });
+        } finally {
+            setIsUpdatingPrivacy(false);
         }
     };
 
@@ -209,6 +249,52 @@ const Profile = () => {
                                                 )}
                                             </Text>
                                         </Box>
+                                    </Group>
+
+                                    <Group
+                                        justify="space-between"
+                                        wrap="nowrap"
+                                        mt="xs"
+                                    >
+                                        <Group wrap="nowrap">
+                                            <ThemeIcon
+                                                variant="light"
+                                                size="md"
+                                                radius="xl"
+                                                color={
+                                                    authUser?.isPublic !== false
+                                                        ? "green"
+                                                        : "gray"
+                                                }
+                                            >
+                                                {authUser?.isPublic !==
+                                                false ? (
+                                                    <FiGlobe size={14} />
+                                                ) : (
+                                                    <FiLock size={14} />
+                                                )}
+                                            </ThemeIcon>
+                                            <Box>
+                                                <Text size="xs" c="dimmed">
+                                                    Profile Visibility
+                                                </Text>
+                                                <Text size="sm" fw={500}>
+                                                    {authUser?.isPublic !==
+                                                    false
+                                                        ? "Public"
+                                                        : "Private"}
+                                                </Text>
+                                            </Box>
+                                        </Group>
+                                        <Switch
+                                            checked={
+                                                authUser?.isPublic !== false
+                                            }
+                                            onChange={handlePrivacyToggle}
+                                            disabled={isUpdatingPrivacy}
+                                            size="md"
+                                            color="green"
+                                        />
                                     </Group>
                                 </Stack>
                             </Paper>

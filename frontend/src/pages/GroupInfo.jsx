@@ -180,7 +180,7 @@ const GroupInfo = () => {
         setSearchingUsers(true);
         try {
             const res = await fetch(
-                `${import.meta.env.VITE_API_URL || ""}/api/users/search?search=${query}`,
+                `${import.meta.env.VITE_API_URL || ""}/api/users`,
             );
             const data = await res.json();
             if (data.error) throw new Error(data.error);
@@ -188,7 +188,10 @@ const GroupInfo = () => {
             // Filter out existing participants
             const existingIds = group.participants.map((p) => p._id);
             const availableUsers = data.filter(
-                (u) => !existingIds.includes(u._id),
+                (u) =>
+                    !existingIds.includes(u._id) &&
+                    (u.fullName.toLowerCase().includes(query.toLowerCase()) ||
+                        u.username.toLowerCase().includes(query.toLowerCase())),
             );
             setUsers(availableUsers);
         } catch (error) {

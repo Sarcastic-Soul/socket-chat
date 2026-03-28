@@ -44,7 +44,8 @@ const useSendMessage = () => {
                     fullName: otherParticipant.fullName,
                     profilePic: otherParticipant.profilePic,
                     participantId: otherParticipant._id,
-                    username: otherParticipant.username
+                    username: otherParticipant.username,
+                    isPublic: otherParticipant.isPublic
                 };
 
                 setConversations([formattedNewConversation, ...conversations]);

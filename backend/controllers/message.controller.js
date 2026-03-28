@@ -1,5 +1,6 @@
 import Conversation from "../models/conversation.model.js";
 import Message from "../models/message.model.js";
+import User from "../models/user.model.js";
 import { getReceiverSocketId, io } from "../socket/socket.js";
 
 export const sendMessage = async (req, res) => {
@@ -18,6 +19,16 @@ export const sendMessage = async (req, res) => {
             });
 
             if (!conversation) {
+                const receiver = await User.findById(conversationIdOrUserId);
+                if (!receiver) {
+                    return res.status(404).json({ error: "User not found" });
+                }
+                if (receiver.isPublic === false) {
+                    return res
+                        .status(403)
+                        .json({ error: "You cannot message a private user." });
+                }
+
                 conversation = await Conversation.create({
                     participants: [senderId, conversationIdOrUserId],
                 });
@@ -26,7 +37,11 @@ export const sendMessage = async (req, res) => {
         }
 
         if (!conversation.participants.includes(senderId)) {
-            return res.status(403).json({ error: "You are not a participant in this conversation." });
+            return res
+                .status(403)
+                .json({
+                    error: "You are not a participant in this conversation.",
+                });
         }
 
         const newMessage = new Message({
@@ -41,12 +56,20 @@ export const sendMessage = async (req, res) => {
 
         await Promise.all([conversation.save(), newMessage.save()]);
 
-        const populatedMessage = await newMessage.populate("senderId", "fullName profilePic username");
+        const populatedMessage = await newMessage.populate(
+            "senderId",
+            "fullName profilePic username isPublic",
+        );
 
         if (conversation.isGroupChat) {
-            io.to(conversation._id.toString()).emit("newMessage", populatedMessage);
+            io.to(conversation._id.toString()).emit(
+                "newMessage",
+                populatedMessage,
+            );
         } else {
-            const receiverId = conversation.participants.find(p => p.toString() !== senderId.toString());
+            const receiverId = conversation.participants.find(
+                (p) => p.toString() !== senderId.toString(),
+            );
             const receiverSocketId = getReceiverSocketId(receiverId);
             if (receiverSocketId) {
                 io.to(receiverSocketId).emit("newMessage", populatedMessage);
@@ -54,12 +77,19 @@ export const sendMessage = async (req, res) => {
         }
 
         if (isNewConversation) {
-            const populatedConv = await conversation.populate("participants", "fullName profilePic username");
-            return res.status(201).json({ newMessage: populatedMessage, newConversation: populatedConv });
+            const populatedConv = await conversation.populate(
+                "participants",
+                "fullName profilePic username isPublic",
+            );
+            return res
+                .status(201)
+                .json({
+                    newMessage: populatedMessage,
+                    newConversation: populatedConv,
+                });
         }
 
         res.status(201).json({ newMessage: populatedMessage });
-
     } catch (error) {
         console.error("Error in sendMessage controller: ", error.message);
         res.status(500).json({ error: "Internal server error" });
@@ -75,7 +105,11 @@ export const getMessages = async (req, res) => {
         const conversation = await Conversation.findById(conversationId);
 
         if (!conversation || !conversation.participants.includes(senderId)) {
-            return res.status(404).json({ error: "Conversation not found or you are not a member." });
+            return res
+                .status(404)
+                .json({
+                    error: "Conversation not found or you are not a member.",
+                });
         }
 
         let messageQuery = { _id: { $in: conversation.messages } };
@@ -93,7 +127,6 @@ export const getMessages = async (req, res) => {
             .lean();
 
         res.status(200).json(messages);
-
     } catch (error) {
         console.error("Error in getMessages controller:", error.message);
         res.status(500).json({ error: "Internal server error" });
@@ -113,14 +146,16 @@ export const addReaction = async (req, res) => {
         }
 
         const existingReactionIndex = message.reactions.findIndex(
-            (r) => r.userId.toString() === userId.toString() && r.reaction === reaction
+            (r) =>
+                r.userId.toString() === userId.toString() &&
+                r.reaction === reaction,
         );
 
         if (existingReactionIndex !== -1) {
             message.reactions.splice(existingReactionIndex, 1);
         } else {
             const existingAnyReactionIndex = message.reactions.findIndex(
-                (r) => r.userId.toString() === userId.toString()
+                (r) => r.userId.toString() === userId.toString(),
             );
             if (existingAnyReactionIndex !== -1) {
                 message.reactions.splice(existingAnyReactionIndex, 1);
@@ -136,7 +171,7 @@ export const addReaction = async (req, res) => {
 
         if (conversation) {
             const receiverId = conversation.participants.find(
-                (p) => p.toString() !== userId.toString()
+                (p) => p.toString() !== userId.toString(),
             );
             const receiverSocketId = getReceiverSocketId(receiverId);
             if (receiverSocketId) {

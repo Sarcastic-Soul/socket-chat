@@ -21,6 +21,7 @@ const MessageInput = () => {
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [file, setFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
     const { loading, sendMessage } = useSendMessage();
     const { colorScheme } = useMantineColorScheme();
     const resetRef = useRef(null);
@@ -33,7 +34,10 @@ const MessageInput = () => {
 
         // Size validation (optional, e.g., 5MB limit)
         if (selectedFile.size > 5 * 1024 * 1024) {
-            notifications.show({ message: "File size must be less than 5MB", color: "red" });
+            notifications.show({
+                message: "File size must be less than 5MB",
+                color: "red",
+            });
             return;
         }
 
@@ -55,13 +59,62 @@ const MessageInput = () => {
         e.preventDefault();
         if (!message.trim() && !file) return;
 
+        let media = null;
+
+        if (file) {
+            setIsUploading(true);
+            try {
+                const sigRes = await fetch(
+                    `${import.meta.env.VITE_API_URL || ""}/api/cloudinary/signature`,
+                );
+                const sigData = await sigRes.json();
+
+                if (sigData.error) throw new Error(sigData.error);
+
+                const formData = new FormData();
+                formData.append("file", file);
+                formData.append("api_key", sigData.apiKey);
+                formData.append("timestamp", sigData.timestamp);
+                formData.append("signature", sigData.signature);
+                formData.append("folder", sigData.folder);
+
+                const uploadRes = await fetch(
+                    `https://api.cloudinary.com/v1_1/${sigData.cloudName}/auto/upload`,
+                    {
+                        method: "POST",
+                        body: formData,
+                        credentials: "omit",
+                    },
+                );
+
+                const uploadData = await uploadRes.json();
+                if (uploadData.error) throw new Error(uploadData.error.message);
+
+                media = {
+                    url: uploadData.secure_url,
+                    type: file.type.startsWith("video/") ? "video" : "image",
+                };
+            } catch (error) {
+                notifications.show({
+                    message: error.message || "Failed to upload file",
+                    color: "red",
+                });
+                setIsUploading(false);
+                return;
+            }
+            setIsUploading(false);
+        }
+
         try {
-            await sendMessage({ message: message.trim(), file });
+            await sendMessage(message.trim(), media);
             setMessage("");
             clearFile();
             setShowEmojiPicker(false);
         } catch (error) {
-            notifications.show({ message: error.message || "Failed to send message", color: "red" });
+            notifications.show({
+                message: error.message || "Failed to send message",
+                color: "red",
+            });
         }
     };
 
@@ -170,7 +223,7 @@ const MessageInput = () => {
                         onChange={(e) => setMessage(e.currentTarget.value)}
                         radius="xl"
                         size="md"
-                        disabled={loading}
+                        disabled={loading || isUploading}
                         autoComplete="off"
                     />
 
@@ -179,11 +232,11 @@ const MessageInput = () => {
                         variant="filled"
                         size="lg"
                         radius="xl"
-                        loading={loading}
+                        loading={loading || isUploading}
                         disabled={!message.trim() && !file}
                         title="Send"
                     >
-                        {!loading && <FiSend size={18} />}
+                        {!(loading || isUploading) && <FiSend size={18} />}
                     </ActionIcon>
                 </Group>
             </form>

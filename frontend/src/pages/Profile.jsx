@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../context/AuthContext";
+import useGetUserDetails from "../hooks/useGetUserDetails";
 import { notifications } from "@mantine/notifications";
-import { FiCamera, FiArrowLeft } from "react-icons/fi";
+import { FiCamera, FiArrowLeft, FiCalendar, FiUser } from "react-icons/fi";
 import {
     Center,
     Paper,
@@ -13,10 +14,14 @@ import {
     ActionIcon,
     Box,
     FileButton,
+    Loader,
+    Group,
+    ThemeIcon,
 } from "@mantine/core";
 
 const Profile = () => {
     const { authUser, setAuthUser } = useAuthContext();
+    const { userDetails, loading } = useGetUserDetails();
     const [previewUrl, setPreviewUrl] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
     const navigate = useNavigate();
@@ -31,14 +36,38 @@ const Profile = () => {
 
         setIsUploading(true);
         try {
-            const formData = new FormData();
-            formData.append("profilePic", file);
+            const sigRes = await fetch(
+                `${import.meta.env.VITE_API_URL || ""}/api/cloudinary/signature/profile-pic`,
+            );
+            const sigData = await sigRes.json();
 
-            const res = await fetch(
-                `${import.meta.env.VITE_API_URL || ""}/api/users/update-profile-pic`,
+            if (sigData.error) throw new Error(sigData.error);
+
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("api_key", sigData.apiKey);
+            formData.append("timestamp", sigData.timestamp);
+            formData.append("signature", sigData.signature);
+            formData.append("folder", sigData.folder);
+
+            const uploadRes = await fetch(
+                `https://api.cloudinary.com/v1_1/${sigData.cloudName}/auto/upload`,
                 {
                     method: "POST",
                     body: formData,
+                    credentials: "omit",
+                },
+            );
+
+            const uploadData = await uploadRes.json();
+            if (uploadData.error) throw new Error(uploadData.error.message);
+
+            const res = await fetch(
+                `${import.meta.env.VITE_API_URL || ""}/api/users/update-pic`,
+                {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ profilePic: uploadData.secure_url }),
                 },
             );
 
@@ -46,9 +75,15 @@ const Profile = () => {
             if (data.error) throw new Error(data.error);
 
             setAuthUser({ ...authUser, profilePic: data.profilePic });
-            notifications.show({ message: "Profile picture updated successfully", color: "green" });
+            notifications.show({
+                message: "Profile picture updated successfully",
+                color: "green",
+            });
         } catch (error) {
-            notifications.show({ message: error.message || "Failed to update profile picture", color: "red" });
+            notifications.show({
+                message: error.message || "Failed to update profile picture",
+                color: "red",
+            });
             setPreviewUrl(null); // Revert preview on failure
         } finally {
             setIsUploading(false);
@@ -112,13 +147,72 @@ const Profile = () => {
                         </FileButton>
                     </Box>
 
-                    <Stack align="center" gap={4}>
+                    <Stack align="center" gap={4} w="100%">
                         <Text size="xl" fw={600}>
                             {authUser?.fullName}
                         </Text>
-                        <Text size="sm" c="dimmed">
+                        <Text size="sm" c="dimmed" mb="md">
                             @{authUser?.username}
                         </Text>
+
+                        {loading ? (
+                            <Loader size="sm" mt="md" />
+                        ) : userDetails ? (
+                            <Paper
+                                withBorder
+                                p="md"
+                                radius="md"
+                                w="100%"
+                                bg="var(--mantine-color-default)"
+                            >
+                                <Stack gap="sm">
+                                    <Group wrap="nowrap">
+                                        <ThemeIcon
+                                            variant="light"
+                                            size="md"
+                                            radius="xl"
+                                        >
+                                            <FiUser size={14} />
+                                        </ThemeIcon>
+                                        <Box>
+                                            <Text size="xs" c="dimmed">
+                                                Full Name
+                                            </Text>
+                                            <Text size="sm" fw={500}>
+                                                {userDetails.fullName}
+                                            </Text>
+                                        </Box>
+                                    </Group>
+
+                                    <Group wrap="nowrap">
+                                        <ThemeIcon
+                                            variant="light"
+                                            size="md"
+                                            radius="xl"
+                                        >
+                                            <FiCalendar size={14} />
+                                        </ThemeIcon>
+                                        <Box>
+                                            <Text size="xs" c="dimmed">
+                                                Member Since
+                                            </Text>
+                                            <Text size="sm" fw={500}>
+                                                {new Date(
+                                                    userDetails.createdAt,
+                                                ).toLocaleDateString(
+                                                    undefined,
+                                                    {
+                                                        year: "numeric",
+                                                        month: "long",
+                                                        day: "numeric",
+                                                    },
+                                                )}
+                                            </Text>
+                                        </Box>
+                                    </Group>
+                                </Stack>
+                            </Paper>
+                        ) : null}
                     </Stack>
                 </Stack>
             </Paper>

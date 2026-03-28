@@ -14,13 +14,15 @@ A real-time chat application built with React (frontend) and Express.js (backend
 - Customizable profile icons 👤
 - Create and manage groups (add/remove members, admin roles, group icons)
 - State management with Zustand ⚡
-- UI styled with elegant glassmorphism effect 🪟
+- Modern and responsive UI built with **Mantine UI** 🎨
+- Dark/Light mode toggle and customizable primary themes 🌗
+- Resizable split-pane sidebar for a tailored chat experience 📏
 - Message caching to minimize redundant API calls 📦
 - MongoDB used as the database 🍃
 
 ## Tech Stack 🛠️
 
-**Frontend:** React, Zustand, Socket.io-client, emoji-picker-react, framer-motion, idb, react-hot-toast, react-icons, react-router-dom  
+**Frontend:** React, Mantine UI (@mantine/core, @mantine/notifications), Zustand, Socket.io-client, emoji-picker-react, idb, react-icons, react-router-dom
 **Backend:** Express.js, Socket.io, MongoDB, JWT authentication, bcryptjs, cloudinary, cookie-parser, dotenv, jsonwebtoken, mongoose
 
 ## Getting Started 🏁
@@ -81,7 +83,7 @@ npm start
 - Customize your profile icon
 - Create and manage chat groups with various functionalities
 - Messages are cached locally to reduce API calls and improve performance
-- Enjoy a smooth and modern glassmorphism UI 🪟
+- Personalize your UI experience with Light/Dark mode and custom theme colors 🎨
 
 Feel free to contribute or report issues.  
 **Happy chatting! 🚀**

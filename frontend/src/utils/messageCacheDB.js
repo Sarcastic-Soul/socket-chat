@@ -1,16 +1,16 @@
-import { openDB, deleteDB } from 'idb';
+import { openDB, deleteDB } from "idb";
 
-const DB_NAME = 'chat-db';
+const DB_NAME = "chat-db";
 
 let dbInstance = null;
 
 const dbPromise = openDB(DB_NAME, 1, {
     upgrade(db) {
-        if (!db.objectStoreNames.contains('messages')) {
-            db.createObjectStore('messages', { keyPath: 'id' });
+        if (!db.objectStoreNames.contains("messages")) {
+            db.createObjectStore("messages", { keyPath: "id" });
         }
     },
-}).then(db => {
+}).then((db) => {
     dbInstance = db;
     return db;
 });
@@ -20,7 +20,7 @@ const dbPromise = openDB(DB_NAME, 1, {
  */
 export const getCachedMessages = async (conversationId) => {
     const db = await dbPromise;
-    const entry = await db.get('messages', conversationId);
+    const entry = await db.get("messages", conversationId);
     return entry?.messages || [];
 };
 
@@ -29,7 +29,7 @@ export const getCachedMessages = async (conversationId) => {
  */
 export const setCachedMessages = async (conversationId, messages) => {
     const db = await dbPromise;
-    await db.put('messages', {
+    await db.put("messages", {
         id: conversationId,
         messages,
         timestamp: new Date().getTime(),
@@ -41,16 +41,19 @@ export const setCachedMessages = async (conversationId, messages) => {
  */
 export const addOlderMessages = async (conversationId, olderMessages) => {
     const db = await dbPromise;
-    const tx = db.transaction('messages', 'readwrite');
-    const store = tx.objectStore('messages');
+    const tx = db.transaction("messages", "readwrite");
+    const store = tx.objectStore("messages");
     const entry = await store.get(conversationId);
 
-    const existingMessageIds = new Set(entry?.messages.map(msg => msg._id));
+    const existingMessageIds = new Set(entry?.messages.map((msg) => msg._id));
     const uniqueOlderMessages = olderMessages.filter(
-        (oldMsg) => !existingMessageIds.has(oldMsg._id)
+        (oldMsg) => !existingMessageIds.has(oldMsg._id),
     );
 
-    const combinedMessages = [...uniqueOlderMessages, ...(entry?.messages || [])];
+    const combinedMessages = [
+        ...uniqueOlderMessages,
+        ...(entry?.messages || []),
+    ];
 
     await store.put({
         id: conversationId,
@@ -66,11 +69,13 @@ export const addOlderMessages = async (conversationId, olderMessages) => {
  */
 export const addMessageToCache = async (conversationId, newMessage) => {
     const db = await dbPromise;
-    const tx = db.transaction('messages', 'readwrite');
-    const store = tx.objectStore('messages');
+    const tx = db.transaction("messages", "readwrite");
+    const store = tx.objectStore("messages");
     const entry = await store.get(conversationId);
 
-    const messageExists = entry?.messages.some(msg => msg._id === newMessage._id);
+    const messageExists = entry?.messages.some(
+        (msg) => msg._id === newMessage._id,
+    );
     if (messageExists) {
         await tx.done;
         return;
@@ -92,8 +97,8 @@ export const addMessageToCache = async (conversationId, newMessage) => {
  */
 export const updateMessageInCache = async (conversationId, updatedMessage) => {
     const db = await dbPromise;
-    const tx = db.transaction('messages', 'readwrite');
-    const store = tx.objectStore('messages');
+    const tx = db.transaction("messages", "readwrite");
+    const store = tx.objectStore("messages");
     const entry = await store.get(conversationId);
 
     if (!entry || !entry.messages) {
@@ -101,8 +106,8 @@ export const updateMessageInCache = async (conversationId, updatedMessage) => {
         return;
     }
 
-    const updatedMessages = entry.messages.map(msg =>
-        msg._id === updatedMessage._id ? updatedMessage : msg
+    const updatedMessages = entry.messages.map((msg) =>
+        msg._id === updatedMessage._id ? updatedMessage : msg,
     );
 
     await store.put({
@@ -119,7 +124,7 @@ export const updateMessageInCache = async (conversationId, updatedMessage) => {
  */
 export const getCachedMessage = async (conversationId, messageId) => {
     const messages = await getCachedMessages(conversationId);
-    return messages.find(msg => msg._id === messageId);
+    return messages.find((msg) => msg._id === messageId);
 };
 
 export const clearAllMessages = async () => {
@@ -131,11 +136,10 @@ export const clearAllMessages = async () => {
         }
 
         // Wait a bit for any pending operations to complete
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
         // Delete the database
         await deleteDB(DB_NAME);
-        console.log("IndexedDB cleared successfully.");
     } catch (error) {
         console.error("Failed to clear IndexedDB:", error);
         throw error;

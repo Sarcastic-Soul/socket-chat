@@ -62,7 +62,10 @@ const GroupInfo = () => {
             setGroup(data);
             setNewGroupName(data.groupName);
         } catch (error) {
-            notifications.show({ message: error.message || "Failed to fetch group details", color: "red" });
+            notifications.show({
+                message: error.message || "Failed to fetch group details",
+                color: "red",
+            });
             navigate("/");
         } finally {
             setLoading(false);
@@ -74,24 +77,58 @@ const GroupInfo = () => {
 
         setIsUploading(true);
         try {
+            const sigRes = await fetch(
+                `${import.meta.env.VITE_API_URL || ""}/api/cloudinary/signature/group-icon`,
+            );
+            const sigData = await sigRes.json();
+
+            if (sigData.error) throw new Error(sigData.error);
+
             const formData = new FormData();
-            formData.append("profilePic", file);
+            formData.append("file", file);
+            formData.append("api_key", sigData.apiKey);
+            formData.append("timestamp", sigData.timestamp);
+            formData.append("signature", sigData.signature);
+            formData.append("folder", sigData.folder);
+
+            const uploadRes = await fetch(
+                `https://api.cloudinary.com/v1_1/${sigData.cloudName}/auto/upload`,
+                {
+                    method: "POST",
+                    body: formData,
+                    credentials: "omit",
+                },
+            );
+
+            const uploadData = await uploadRes.json();
+            if (uploadData.error) throw new Error(uploadData.error.message);
 
             const res = await fetch(
-                `${import.meta.env.VITE_API_URL || ""}/api/groups/${groupId}/update-pic`,
+                `${import.meta.env.VITE_API_URL || ""}/api/groups/${groupId}/update`,
                 {
                     method: "PUT",
-                    body: formData,
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ groupIcon: uploadData.secure_url }),
                 },
             );
 
             const data = await res.json();
             if (data.error) throw new Error(data.error);
 
-            setGroup({ ...group, profilePic: data.profilePic });
-            notifications.show({ message: "Group picture updated", color: "green" });
+            setGroup({
+                ...group,
+                groupIcon: data.groupIcon,
+                profilePic: data.groupIcon,
+            });
+            notifications.show({
+                message: "Group picture updated",
+                color: "green",
+            });
         } catch (error) {
-            notifications.show({ message: error.message || "Failed to update group picture", color: "red" });
+            notifications.show({
+                message: error.message || "Failed to update group picture",
+                color: "red",
+            });
         } finally {
             setIsUploading(false);
         }
@@ -117,10 +154,16 @@ const GroupInfo = () => {
             if (data.error) throw new Error(data.error);
 
             setGroup({ ...group, groupName: data.groupName });
-            notifications.show({ message: "Group name updated", color: "green" });
+            notifications.show({
+                message: "Group name updated",
+                color: "green",
+            });
             setIsEditingName(false);
         } catch (error) {
-            notifications.show({ message: error.message || "Failed to update group name", color: "red" });
+            notifications.show({
+                message: error.message || "Failed to update group name",
+                color: "red",
+            });
         } finally {
             setIsUpdatingName(false);
         }
@@ -149,7 +192,10 @@ const GroupInfo = () => {
             );
             setUsers(availableUsers);
         } catch (error) {
-            notifications.show({ message: error.message || "Failed to search users", color: "red" });
+            notifications.show({
+                message: error.message || "Failed to search users",
+                color: "red",
+            });
         } finally {
             setSearchingUsers(false);
         }
@@ -172,7 +218,10 @@ const GroupInfo = () => {
             setUsers(users.filter((u) => u._id !== userId));
             notifications.show({ message: "Member added", color: "green" });
         } catch (error) {
-            notifications.show({ message: error.message || "Failed to add member", color: "red" });
+            notifications.show({
+                message: error.message || "Failed to add member",
+                color: "red",
+            });
         }
     };
 
@@ -192,7 +241,10 @@ const GroupInfo = () => {
             setGroup(data);
             notifications.show({ message: "Member removed", color: "green" });
         } catch (error) {
-            notifications.show({ message: error.message || "Failed to remove member", color: "red" });
+            notifications.show({
+                message: error.message || "Failed to remove member",
+                color: "red",
+            });
         }
     };
 

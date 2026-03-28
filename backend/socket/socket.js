@@ -14,7 +14,7 @@ export const getReceiverSocketId = (receiverId) => {
 
 const allowedOrigins = [
     "https://socket-chat-nine-tau.vercel.app",
-    "http://localhost:3000"
+    "http://localhost:3000",
 ];
 
 const io = new Server(server, {
@@ -27,27 +27,27 @@ const io = new Server(server, {
 });
 
 io.on("connection", async (socket) => {
-    console.log("a user connected", socket.id);
-
     const userId = socket.handshake.query.userId;
     if (userId) {
         userSocketMap[userId] = socket.id;
 
         // Join user to all their group chat rooms
         try {
-            const userGroups = await Conversation.find({ isGroupChat: true, participants: userId });
-            userGroups.forEach(group => {
+            const userGroups = await Conversation.find({
+                isGroupChat: true,
+                participants: userId,
+            });
+            userGroups.forEach((group) => {
                 socket.join(group._id.toString());
             });
         } catch (error) {
-            console.log("Error joining user to group rooms:", error.message);
+            console.error("Error joining user to group rooms:", error.message);
         }
     }
 
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
 
     socket.on("disconnect", () => {
-        console.log("user disconnected", socket.id);
         delete userSocketMap[userId];
         io.emit("getOnlineUsers", Object.keys(userSocketMap));
     });

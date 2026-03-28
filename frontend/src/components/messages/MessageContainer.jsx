@@ -27,8 +27,6 @@ const MessageContainer = () => {
         return () => setSelectedConversation(null);
     }, [setSelectedConversation]);
 
-    console.log("Selected Conversation:", selectedConversation?.isGroupChat);
-
     const isOnline =
         selectedConversation &&
         !selectedConversation.isGroupChat &&

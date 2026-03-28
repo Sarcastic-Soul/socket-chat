@@ -43,7 +43,6 @@ export const CallContextProvider = ({ children }) => {
     useEffect(() => {
         const handleBeforeUnload = () => {
             if (connectionRef.current) {
-                console.log("🧹 Page unloading, ending call...");
                 socket?.emit("endCall", { to: call.from || call.userToCall });
             }
         };
@@ -56,7 +55,6 @@ export const CallContextProvider = ({ children }) => {
         if (!socket) return;
 
         socket.on("incomingCall", ({ from, callerName, callerPic, signal }) => {
-            console.log("📞 Incoming call from:", callerName, from);
             setCall({
                 isReceivingCall: true,
                 from,
@@ -69,12 +67,10 @@ export const CallContextProvider = ({ children }) => {
         });
 
         socket.on("callEnded", () => {
-            console.log("📞 Call ended by remote peer");
             endCallCleanup();
         });
 
         socket.on("callAccepted", async (signal) => {
-            console.log("📞 Call accepted by remote peer");
             setCallAccepted(true);
             if (
                 connectionRef.current &&
@@ -119,7 +115,6 @@ export const CallContextProvider = ({ children }) => {
     }, [socket]);
 
     const endCallCleanup = () => {
-        console.log("🧹 Cleaning up call resources");
         setCallEnded(false);
         setCallAccepted(false);
         setIsCalling(false);
@@ -141,7 +136,6 @@ export const CallContextProvider = ({ children }) => {
     };
 
     const setupMedia = async () => {
-        console.log("📷 Requesting media permissions...");
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: true,
@@ -158,7 +152,6 @@ export const CallContextProvider = ({ children }) => {
 
             // Fallback to audio only if video fails (e.g., no webcam)
             try {
-                console.log("🎤 Attempting audio-only fallback...");
                 const audioStream = await navigator.mediaDevices.getUserMedia({
                     video: false,
                     audio: true,
@@ -190,7 +183,6 @@ export const CallContextProvider = ({ children }) => {
     };
 
     const callUser = async (userToCallId) => {
-        console.log("📞 Initiating call to:", userToCallId);
         const stream = await setupMedia();
         if (!stream) return;
 
@@ -232,7 +224,6 @@ export const CallContextProvider = ({ children }) => {
     };
 
     const answerCall = async () => {
-        console.log("📞 Answering incoming call");
         setCallAccepted(true);
         const stream = await setupMedia();
         if (!stream) return;
@@ -271,7 +262,6 @@ export const CallContextProvider = ({ children }) => {
     };
 
     const leaveCall = () => {
-        console.log("📞 Leaving call");
         if (call.from || call.userToCall) {
             socket.emit("endCall", { to: call.from || call.userToCall });
         }
@@ -279,7 +269,6 @@ export const CallContextProvider = ({ children }) => {
     };
 
     const rejectCall = () => {
-        console.log("📞 Rejecting call");
         if (call.from) {
             socket.emit("endCall", { to: call.from });
         }

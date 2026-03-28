@@ -10,6 +10,7 @@ A real-time chat application built with React (frontend) and Express.js (backend
 - User login/signup with unique username and password authentication 🔐
 - Real-time chat with multiple users 👥
 - Emojis and reaction support for messages 😂👍
+- High-quality 1-on-1 Video Calling using WebRTC 📹📞
 - Read Receipts (Sent / Read ticks) & Unread Message Indicators ✔️✔️
 - Media support in chat (Drag & Drop images and videos with progress bars) 🖼️📹
 - Server-Side Encryption at Rest (AES-256) to protect database message history 🛡️
@@ -32,21 +33,21 @@ A real-time chat application built with React (frontend) and Express.js (backend
 
 ### Prerequisites 📋
 
-- Node.js installed
+- [Bun](https://bun.sh/) installed (`curl -fsSL https://bun.sh/install | bash`)
 - MongoDB database ready
 
 ### Installation 💻
 
 1. Clone the repository
 
-2. Install dependencies in both frontend and backend folders:
+2. Install dependencies in both frontend and backend folders using Bun:
 
 ```bash
 cd frontend
-npm install
+bun install
 
 cd ../backend
-npm install
+bun install
 ```
 
 3. Create a `.env` file in the backend folder with the following variables:
@@ -62,20 +63,29 @@ CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 ENCRYPTION_KEY=your_super_secret_32_character_key
 ```
 
+### Seeding the Database 🌱
+
+You can quickly populate your database with dummy users, conversations, groups, and messages to test the application by running:
+
+```bash
+cd backend
+bun run seed
+```
+
 ### Running Locally ▶️
 
 1. Start the backend server (runs on port 5000):
 
 ```bash
 cd backend
-npm start
+bun run dev
 ```
 
 2. Start the frontend (runs on port 3000):
 
 ```bash
 cd frontend
-npm start
+bun run dev
 ```
 
 ## Usage 🎉
@@ -84,6 +94,7 @@ npm start
 - Start chatting with any person signed up on this platform in real-time
 - Express yourself with emojis and reactions
 - See when your messages are delivered and read with double-tick receipts ✔️✔️
+- Start a peer-to-peer Video Call with anyone in a 1-on-1 conversation 📹
 - Drag and drop images and videos directly into chats with live upload progress 📤
 - Toggle your profile privacy to hide from public searches
 - Create and manage chat groups with various functionalities

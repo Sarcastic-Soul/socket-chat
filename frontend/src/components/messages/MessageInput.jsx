@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { FiSend, FiSmile, FiPaperclip, FiMic, FiSquare } from "react-icons/fi";
 import EmojiPicker from "emoji-picker-react";
 import useSendMessage from "../../hooks/useSendMessage";
@@ -15,6 +15,7 @@ import {
     CloseButton,
     Indicator,
     Select,
+    Text,
 } from "@mantine/core";
 import useConversation from "../../zustand/useConversation";
 import { useAuthContext } from "../../context/AuthContext";
@@ -29,12 +30,28 @@ const MessageInput = () => {
     const { colorScheme } = useMantineColorScheme();
     const resetRef = useRef(null);
     const messages = useConversation((state) => state.messages);
+    const replyingToMessage = useConversation(
+        (state) => state.replyingToMessage,
+    );
+    const setReplyingToMessage = useConversation(
+        (state) => state.setReplyingToMessage,
+    );
+    const selectedConversation = useConversation(
+        (state) => state.selectedConversation,
+    );
     const { authUser } = useAuthContext();
     const [isGenerating, setIsGenerating] = useState(false);
     const [selectedTone, setSelectedTone] = useState("Auto");
     const [isRecording, setIsRecording] = useState(false);
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
+    const inputRef = useRef(null);
+
+    useEffect(() => {
+        if (replyingToMessage && inputRef.current) {
+            inputRef.current.focus();
+        }
+    }, [replyingToMessage]);
 
     const tones = [
         { label: "Auto", value: "Auto" },
@@ -244,6 +261,50 @@ const MessageInput = () => {
                 borderTop: "1px solid var(--mantine-color-default-border)",
             }}
         >
+            {replyingToMessage && (
+                <Box
+                    mb="sm"
+                    p="xs"
+                    style={{
+                        backgroundColor: "var(--mantine-color-default-hover)",
+                        borderRadius: 8,
+                        position: "relative",
+                        paddingRight: 30,
+                    }}
+                >
+                    <Text size="xs" fw={600} c="dimmed">
+                        Replying to{" "}
+                        {(() => {
+                            const senderObj = replyingToMessage.senderId;
+                            const sId = String(senderObj?._id || senderObj);
+                            if (sId === String(authUser?._id))
+                                return "Yourself";
+                            if (senderObj?.fullName) return senderObj.fullName;
+                            if (senderObj?.username) return senderObj.username;
+                            if (selectedConversation?.isGroupChat) {
+                                const p =
+                                    selectedConversation.participants?.find(
+                                        (p) => String(p._id) === sId,
+                                    );
+                                return p?.fullName || p?.username || "User";
+                            }
+                            return selectedConversation?.fullName || "User";
+                        })()}
+                    </Text>
+                    <Text size="sm" lineClamp={1}>
+                        {replyingToMessage.message ||
+                            (replyingToMessage.mediaUrl
+                                ? `[${replyingToMessage.mediaType}]`
+                                : "...")}
+                    </Text>
+                    <CloseButton
+                        size="sm"
+                        style={{ position: "absolute", top: 8, right: 8 }}
+                        onClick={() => setReplyingToMessage(null)}
+                    />
+                </Box>
+            )}
+
             {previewUrl && (
                 <Box
                     mb="sm"
@@ -380,6 +441,7 @@ const MessageInput = () => {
                     </FileButton>
 
                     <TextInput
+                        ref={inputRef}
                         flex={1}
                         placeholder="Send a message..."
                         value={message}

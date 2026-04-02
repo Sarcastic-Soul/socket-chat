@@ -14,12 +14,13 @@ import {
     Popover,
     UnstyledButton,
 } from "@mantine/core";
-import { FiSmile } from "react-icons/fi";
+import { FiSmile, FiCornerUpLeft } from "react-icons/fi";
 import { BsCheck, BsCheckAll } from "react-icons/bs";
 
 const Message = ({ message }) => {
     const { authUser } = useAuthContext();
-    const { selectedConversation, updateMessage } = useConversation();
+    const { selectedConversation, updateMessage, setReplyingToMessage } =
+        useConversation();
 
     const senderId = message.senderId._id || message.senderId;
     const fromMe = senderId === authUser._id;
@@ -126,6 +127,63 @@ const Message = ({ message }) => {
                             borderBottomLeftRadius: !fromMe ? 4 : undefined,
                         }}
                     >
+                        {message.replyTo && (
+                            <Paper
+                                p="xs"
+                                mb="xs"
+                                radius="sm"
+                                style={{
+                                    backgroundColor: "rgba(0, 0, 0, 0.1)",
+                                    borderLeft: `4px solid ${fromMe ? "white" : "var(--mantine-primary-color-filled)"}`,
+                                }}
+                            >
+                                <Text
+                                    size="xs"
+                                    fw={600}
+                                    c={fromMe ? "white" : "dimmed"}
+                                >
+                                    {(() => {
+                                        const senderObj =
+                                            message.replyTo.senderId;
+                                        const sId = String(
+                                            senderObj?._id || senderObj,
+                                        );
+                                        if (sId === String(authUser?._id))
+                                            return "You";
+                                        if (senderObj?.fullName)
+                                            return senderObj.fullName;
+                                        if (senderObj?.username)
+                                            return senderObj.username;
+                                        if (selectedConversation?.isGroupChat) {
+                                            const p =
+                                                selectedConversation.participants?.find(
+                                                    (p) =>
+                                                        String(p._id) === sId,
+                                                );
+                                            return (
+                                                p?.fullName ||
+                                                p?.username ||
+                                                "User"
+                                            );
+                                        }
+                                        return (
+                                            selectedConversation?.fullName ||
+                                            "User"
+                                        );
+                                    })()}
+                                </Text>
+                                <Text
+                                    size="xs"
+                                    lineClamp={1}
+                                    c={fromMe ? "white" : undefined}
+                                >
+                                    {message.replyTo.message ||
+                                        (message.replyTo.mediaUrl
+                                            ? `[${message.replyTo.mediaType}]`
+                                            : "...")}
+                                </Text>
+                            </Paper>
+                        )}
                         {message.mediaUrl && (
                             <Box mb={message.message ? "sm" : 0}>
                                 {message.mediaType === "image" ? (
@@ -169,41 +227,51 @@ const Message = ({ message }) => {
                     </Paper>
 
                     {isHovered && (
-                        <Popover
-                            opened={showReactionPicker}
-                            onChange={setShowReactionPicker}
-                            position={fromMe ? "left" : "right"}
-                            withArrow
-                            shadow="md"
-                        >
-                            <Popover.Target>
-                                <ActionIcon
-                                    variant="subtle"
-                                    radius="xl"
-                                    onClick={() =>
-                                        setShowReactionPicker((o) => !o)
-                                    }
-                                >
-                                    <FiSmile size={16} />
-                                </ActionIcon>
-                            </Popover.Target>
-                            <Popover.Dropdown p="xs">
-                                <Group gap={4}>
-                                    {availableReactions.map((emoji) => (
-                                        <ActionIcon
-                                            key={emoji}
-                                            variant="subtle"
-                                            onClick={() =>
-                                                handleReaction(emoji)
-                                            }
-                                            size="lg"
-                                        >
-                                            <Text size="xl">{emoji}</Text>
-                                        </ActionIcon>
-                                    ))}
-                                </Group>
-                            </Popover.Dropdown>
-                        </Popover>
+                        <>
+                            <ActionIcon
+                                variant="subtle"
+                                radius="xl"
+                                onClick={() => setReplyingToMessage(message)}
+                                title="Reply"
+                            >
+                                <FiCornerUpLeft size={16} />
+                            </ActionIcon>
+                            <Popover
+                                opened={showReactionPicker}
+                                onChange={setShowReactionPicker}
+                                position={fromMe ? "left" : "right"}
+                                withArrow
+                                shadow="md"
+                            >
+                                <Popover.Target>
+                                    <ActionIcon
+                                        variant="subtle"
+                                        radius="xl"
+                                        onClick={() =>
+                                            setShowReactionPicker((o) => !o)
+                                        }
+                                    >
+                                        <FiSmile size={16} />
+                                    </ActionIcon>
+                                </Popover.Target>
+                                <Popover.Dropdown p="xs">
+                                    <Group gap={4}>
+                                        {availableReactions.map((emoji) => (
+                                            <ActionIcon
+                                                key={emoji}
+                                                variant="subtle"
+                                                onClick={() =>
+                                                    handleReaction(emoji)
+                                                }
+                                                size="lg"
+                                            >
+                                                <Text size="xl">{emoji}</Text>
+                                            </ActionIcon>
+                                        ))}
+                                    </Group>
+                                </Popover.Dropdown>
+                            </Popover>
+                        </>
                     )}
                 </Group>
 

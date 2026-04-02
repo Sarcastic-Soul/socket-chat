@@ -12,6 +12,9 @@ const useConversation = create((set, get) => ({
     messages: [],
     setMessages: (msgs) => set({ messages: msgs }),
 
+    replyingToMessage: null,
+    setReplyingToMessage: (message) => set({ replyingToMessage: message }),
+
     conversations: [],
     setConversations: (conversations) => set({ conversations }),
     addConversation: (conversation) =>

@@ -30,6 +30,11 @@ const messageSchema = new mongoose.Schema(
             enum: ["sent", "read"],
             default: "sent",
         },
+        replyTo: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Message",
+            default: null,
+        },
         reactions: [
             {
                 userId: {

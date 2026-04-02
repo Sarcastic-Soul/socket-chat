@@ -14,6 +14,8 @@ const useSendMessage = () => {
         conversations,
         setSelectedConversation,
         updateConversation,
+        replyingToMessage,
+        setReplyingToMessage,
     } = useConversation();
 
     const sendMessage = async (messageText = "", media = null) => {
@@ -22,6 +24,10 @@ const useSendMessage = () => {
             const body = {
                 message: messageText,
             };
+
+            if (replyingToMessage) {
+                body.replyTo = replyingToMessage._id;
+            }
 
             if (media && media.url && media.type) {
                 body.mediaUrl = media.url;
@@ -45,6 +51,7 @@ const useSendMessage = () => {
             }
 
             setMessages([...messages, data.newMessage]);
+            setReplyingToMessage(null);
 
             updateConversation({
                 _id: selectedConversation._id,

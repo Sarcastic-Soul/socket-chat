@@ -7,7 +7,7 @@ import { encryptText, decryptText } from "../utils/encryption.js";
 
 export const sendMessage = async (req, res) => {
     try {
-        const { message, mediaUrl, mediaType } = req.body;
+        const { message, mediaUrl, mediaType, replyTo } = req.body;
         const { id: conversationIdOrUserId } = req.params;
         const senderId = req.user._id;
 
@@ -50,20 +50,29 @@ export const sendMessage = async (req, res) => {
             message: message ? encryptText(message) : "",
             mediaUrl: mediaUrl || null,
             mediaType: mediaType || "text",
+            replyTo: replyTo || null,
         });
 
         conversation.messages.push(newMessage._id);
 
         await Promise.all([conversation.save(), newMessage.save()]);
 
-        const populatedMessage = await newMessage.populate(
-            "senderId",
-            "fullName profilePic username isPublic",
-        );
+        const populatedMessage = await newMessage.populate([
+            {
+                path: "senderId",
+                select: "fullName profilePic username isPublic",
+            },
+            { path: "replyTo", select: "message mediaType mediaUrl senderId" },
+        ]);
 
         // Decrypt message before sending to sockets/frontend
         if (populatedMessage.message) {
             populatedMessage.message = decryptText(populatedMessage.message);
+        }
+        if (populatedMessage.replyTo && populatedMessage.replyTo.message) {
+            populatedMessage.replyTo.message = decryptText(
+                populatedMessage.replyTo.message,
+            );
         }
 
         if (conversation.isGroupChat) {
@@ -125,13 +134,25 @@ export const getMessages = async (req, res) => {
         const messages = await Message.find(messageQuery)
             .sort({ createdAt: -1 })
             .limit(parseInt(limit))
+            .populate({
+                path: "replyTo",
+                select: "message mediaType mediaUrl senderId",
+            })
             .lean();
 
         // Decrypt all messages before sending to client
-        const decryptedMessages = messages.map((msg) => ({
-            ...msg,
-            message: msg.message ? decryptText(msg.message) : "",
-        }));
+        const decryptedMessages = messages.map((msg) => {
+            const decryptedMsg = {
+                ...msg,
+                message: msg.message ? decryptText(msg.message) : "",
+            };
+            if (decryptedMsg.replyTo && decryptedMsg.replyTo.message) {
+                decryptedMsg.replyTo.message = decryptText(
+                    decryptedMsg.replyTo.message,
+                );
+            }
+            return decryptedMsg;
+        });
 
         res.status(200).json(decryptedMessages);
     } catch (error) {

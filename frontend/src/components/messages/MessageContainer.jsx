@@ -1,8 +1,14 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useConversation from "../../zustand/useConversation";
 import MessageInput from "./MessageInput";
 import Messages from "./Messages";
-import { FiMessageSquare, FiVideo, FiArrowLeft } from "react-icons/fi";
+import {
+    FiMessageSquare,
+    FiVideo,
+    FiArrowLeft,
+    FiSearch,
+} from "react-icons/fi";
 import { useAuthContext } from "../../context/AuthContext";
 import { useSocketContext } from "../../context/SocketContext";
 import { useCallContext } from "../../context/CallContext";
@@ -14,6 +20,8 @@ import {
     ActionIcon,
     Center,
     Stack,
+    TextInput,
+    Box,
 } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 
@@ -23,6 +31,12 @@ const MessageContainer = () => {
     const { onlineUsers } = useSocketContext();
     const { callUser } = useCallContext();
     const navigate = useNavigate();
+    const [showSearch, setShowSearch] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+
+    const handleSearch = (e) => {
+        setSearchQuery(e.currentTarget.value);
+    };
 
     const isOnline =
         selectedConversation &&
@@ -107,6 +121,14 @@ const MessageContainer = () => {
                             </Group>
                         </Group>
                         <Group gap="sm">
+                            <ActionIcon
+                                variant="subtle"
+                                radius="xl"
+                                size="lg"
+                                onClick={() => setShowSearch(!showSearch)}
+                            >
+                                <FiSearch size={20} />
+                            </ActionIcon>
                             {!selectedConversation.isGroupChat && (
                                 <ActionIcon
                                     variant="filled"
@@ -126,7 +148,27 @@ const MessageContainer = () => {
                         </Group>
                     </Group>
 
-                    <Messages />
+                    {showSearch && (
+                        <Box
+                            p="xs"
+                            style={{
+                                borderBottom:
+                                    "1px solid var(--mantine-color-default-border)",
+                            }}
+                        >
+                            <TextInput
+                                placeholder="Search in chat..."
+                                value={searchQuery}
+                                onChange={handleSearch}
+                                rightSection={<FiSearch size={16} />}
+                                radius="xl"
+                                size="sm"
+                                autoFocus
+                            />
+                        </Box>
+                    )}
+
+                    <Messages searchQuery={searchQuery} />
                     <MessageInput />
                 </>
             )}

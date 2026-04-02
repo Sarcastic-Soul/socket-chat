@@ -5,13 +5,21 @@ import Message from "./Message";
 import useListenMessages from "../../hooks/useListenMessages";
 import { ScrollArea, Center, Loader, Text, Stack } from "@mantine/core";
 
-const Messages = () => {
+const Messages = ({ searchQuery }) => {
     const { messages, loading, loadOlderMessages, hasMore, isLoadingMore } =
         useGetMessages();
     useListenMessages();
     const observer = useRef();
     const lastMessageRef = useRef();
     const viewportRef = useRef();
+
+    const filteredMessages =
+        messages?.filter((message) => {
+            if (!searchQuery) return true;
+            return message.message
+                ?.toLowerCase()
+                .includes(searchQuery.toLowerCase());
+        }) || [];
 
     const topRef = useCallback(
         (node) => {
@@ -63,11 +71,9 @@ const Messages = () => {
                 </Stack>
             )}
 
-            {messages &&
-                Array.isArray(messages) &&
-                messages.length > 0 &&
-                messages.map((message, idx) => {
-                    const isLastMessage = idx === messages.length - 1;
+            {filteredMessages.length > 0 &&
+                filteredMessages.map((message, idx) => {
+                    const isLastMessage = idx === filteredMessages.length - 1;
                     return (
                         <div
                             key={message._id}
@@ -77,6 +83,16 @@ const Messages = () => {
                         </div>
                     );
                 })}
+
+            {!loading &&
+                messages?.length > 0 &&
+                filteredMessages.length === 0 && (
+                    <Center h="100%">
+                        <Text c="dimmed">
+                            No messages found matching "{searchQuery}".
+                        </Text>
+                    </Center>
+                )}
 
             {!loading &&
                 messages &&

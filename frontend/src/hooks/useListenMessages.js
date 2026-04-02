@@ -11,10 +11,16 @@ const useListenMessages = () => {
         selectedConversation,
         markMessagesRead,
         setUnreadMessage,
+        updateConversation,
     } = useConversation();
 
     useEffect(() => {
         const handleNewMessage = (newMessage) => {
+            updateConversation({
+                _id: newMessage.receiverId,
+                updatedAt: newMessage.createdAt || new Date().toISOString(),
+            });
+
             // Only add message if it's for the currently selected conversation
             if (
                 selectedConversation &&
@@ -73,6 +79,7 @@ const useListenMessages = () => {
         markMessagesRead,
         setUnreadMessage,
         selectedConversation,
+        updateConversation,
     ]);
 };
 

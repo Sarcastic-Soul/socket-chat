@@ -2,8 +2,13 @@ import { useState, useEffect } from "react";
 import MessageContainer from "../components/messages/MessageContainer";
 import Sidebar from "../components/sidebar/Sidebar";
 import { Container, Paper, Flex, Box } from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
+import useConversation from "../zustand/useConversation";
 
 const Home = () => {
+    const { selectedConversation } = useConversation();
+    const isMobile = useMediaQuery("(max-width: 768px)");
+
     // Set initial sidebar width to 25% of the viewport width
     const [sidebarWidth, setSidebarWidth] = useState(window.innerWidth * 0.25);
 
@@ -61,36 +66,43 @@ const Home = () => {
                 style={{ overflow: "hidden", border: "none" }}
             >
                 <Flex h="100%" w="100%" align="stretch">
-                    {/* Sidebar Area - 25% by default */}
-                    <Box
-                        w={sidebarWidth}
-                        miw={200}
-                        style={{
-                            borderRight:
-                                "1px solid var(--mantine-color-default-border)",
-                            flexShrink: 0,
-                            height: "100%",
-                        }}
-                    >
-                        <Sidebar />
-                    </Box>
+                    {/* Sidebar Area */}
+                    {(!isMobile || !selectedConversation) && (
+                        <Box
+                            w={isMobile ? "100%" : sidebarWidth}
+                            miw={isMobile ? "100%" : 200}
+                            style={{
+                                borderRight: isMobile
+                                    ? "none"
+                                    : "1px solid var(--mantine-color-default-border)",
+                                flexShrink: 0,
+                                height: "100%",
+                            }}
+                        >
+                            <Sidebar />
+                        </Box>
+                    )}
 
                     {/* Resizable Divider */}
-                    <Box
-                        onMouseDown={handleMouseDown}
-                        w={5}
-                        style={{
-                            cursor: "col-resize",
-                            backgroundColor: "transparent",
-                            flexShrink: 0,
-                            zIndex: 10,
-                        }}
-                    />
+                    {!isMobile && (
+                        <Box
+                            onMouseDown={handleMouseDown}
+                            w={5}
+                            style={{
+                                cursor: "col-resize",
+                                backgroundColor: "transparent",
+                                flexShrink: 0,
+                                zIndex: 10,
+                            }}
+                        />
+                    )}
 
-                    {/* Conversation Area - 75% by default */}
-                    <Box style={{ flex: 1, minWidth: 0, height: "100%" }}>
-                        <MessageContainer />
-                    </Box>
+                    {/* Conversation Area */}
+                    {(!isMobile || selectedConversation) && (
+                        <Box style={{ flex: 1, minWidth: 0, height: "100%" }}>
+                            <MessageContainer />
+                        </Box>
+                    )}
                 </Flex>
             </Paper>
         </Container>

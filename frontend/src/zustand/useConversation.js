@@ -18,6 +18,14 @@ const useConversation = create((set, get) => ({
         set((state) => ({
             conversations: [conversation, ...state.conversations],
         })),
+    updateConversation: (updatedConv) =>
+        set((state) => ({
+            conversations: state.conversations.map((conv) =>
+                conv._id === updatedConv._id
+                    ? { ...conv, ...updatedConv }
+                    : conv,
+            ),
+        })),
 
     searchTerm: "",
     setSearchTerm: (term) => set({ searchTerm: term }),

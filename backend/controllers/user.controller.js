@@ -33,10 +33,12 @@ export const getConversations = async (req, res) => {
 
         const conversations = await Conversation.find({
             participants: loggedInUserId,
-        }).populate({
-            path: "participants",
-            select: "fullName profilePic username isPublic",
-        });
+        })
+            .sort({ updatedAt: -1 })
+            .populate({
+                path: "participants",
+                select: "fullName profilePic username isPublic",
+            });
 
         const formattedConversations = conversations.reduce((acc, conv) => {
             if (conv.isGroupChat) {
@@ -49,6 +51,7 @@ export const getConversations = async (req, res) => {
                         `https://ui-avatars.com/api/?name=${conv.groupName}&background=random&bold=true`,
                     participants: conv.participants,
                     admins: conv.admins,
+                    updatedAt: conv.updatedAt,
                 });
             } else {
                 const otherParticipant = conv.participants.find(
@@ -64,6 +67,7 @@ export const getConversations = async (req, res) => {
                         participantId: otherParticipant._id,
                         username: otherParticipant.username,
                         isPublic: otherParticipant.isPublic,
+                        updatedAt: conv.updatedAt,
                     });
                 }
             }

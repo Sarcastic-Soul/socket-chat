@@ -1,9 +1,8 @@
-import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import useConversation from "../../zustand/useConversation";
 import MessageInput from "./MessageInput";
 import Messages from "./Messages";
-import { FiMessageSquare, FiUsers, FiVideo } from "react-icons/fi";
+import { FiMessageSquare, FiVideo, FiArrowLeft } from "react-icons/fi";
 import { useAuthContext } from "../../context/AuthContext";
 import { useSocketContext } from "../../context/SocketContext";
 import { useCallContext } from "../../context/CallContext";
@@ -16,16 +15,14 @@ import {
     Center,
     Stack,
 } from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
 
 const MessageContainer = () => {
     const { selectedConversation, setSelectedConversation } = useConversation();
+    const isMobile = useMediaQuery("(max-width: 768px)");
     const { onlineUsers } = useSocketContext();
     const { callUser } = useCallContext();
     const navigate = useNavigate();
-
-    useEffect(() => {
-        return () => setSelectedConversation(null);
-    }, [setSelectedConversation]);
 
     const isOnline =
         selectedConversation &&
@@ -66,25 +63,48 @@ const MessageContainer = () => {
                                 "1px solid var(--mantine-color-default-border)",
                         }}
                     >
-                        <Group
-                            onClick={handleHeaderClick}
-                            style={{ cursor: "pointer" }}
-                        >
-                            <Avatar src={displayPic} radius="xl" size="md" />
-                            <Stack gap={0}>
-                                <Text fw={600} size="md">
-                                    {displayName}
-                                </Text>
-                                {!selectedConversation.isGroupChat &&
-                                    selectedConversation.isPublic && (
-                                        <Text
-                                            size="xs"
-                                            c={isOnline ? "green" : "dimmed"}
-                                        >
-                                            {isOnline ? "Online" : "Offline"}
-                                        </Text>
-                                    )}
-                            </Stack>
+                        <Group gap="xs">
+                            {isMobile && (
+                                <ActionIcon
+                                    variant="subtle"
+                                    onClick={() =>
+                                        setSelectedConversation(null)
+                                    }
+                                    size="lg"
+                                >
+                                    <FiArrowLeft size={20} />
+                                </ActionIcon>
+                            )}
+                            <Group
+                                onClick={handleHeaderClick}
+                                style={{ cursor: "pointer" }}
+                            >
+                                <Avatar
+                                    src={displayPic}
+                                    radius="xl"
+                                    size="md"
+                                />
+                                <Stack gap={0}>
+                                    <Text fw={600} size="md">
+                                        {displayName}
+                                    </Text>
+                                    {!selectedConversation.isGroupChat &&
+                                        selectedConversation.isPublic && (
+                                            <Text
+                                                size="xs"
+                                                c={
+                                                    isOnline
+                                                        ? "green"
+                                                        : "dimmed"
+                                                }
+                                            >
+                                                {isOnline
+                                                    ? "Online"
+                                                    : "Offline"}
+                                            </Text>
+                                        )}
+                                </Stack>
+                            </Group>
                         </Group>
                         <Group gap="sm">
                             {!selectedConversation.isGroupChat && (

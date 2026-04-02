@@ -6,7 +6,15 @@ import { useAuthContext } from "../context/AuthContext";
 const useSendMessage = () => {
     const [loading, setLoading] = useState(false);
     const { authUser } = useAuthContext();
-    const { messages, setMessages, selectedConversation, setConversations, conversations, setSelectedConversation } = useConversation();
+    const {
+        messages,
+        setMessages,
+        selectedConversation,
+        setConversations,
+        conversations,
+        setSelectedConversation,
+        updateConversation,
+    } = useConversation();
 
     const sendMessage = async (messageText = "", media = null) => {
         setLoading(true);
@@ -20,13 +28,16 @@ const useSendMessage = () => {
                 body.mediaType = media.type;
             }
 
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/messages/send/${selectedConversation._id}`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
+            const res = await fetch(
+                `${import.meta.env.VITE_API_URL}/api/messages/send/${selectedConversation._id}`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(body),
                 },
-                body: JSON.stringify(body),
-            });
+            );
 
             const data = await res.json();
             if (data.error) {
@@ -35,8 +46,16 @@ const useSendMessage = () => {
 
             setMessages([...messages, data.newMessage]);
 
+            updateConversation({
+                _id: selectedConversation._id,
+                updatedAt:
+                    data.newMessage.createdAt || new Date().toISOString(),
+            });
+
             if (data.newConversation) {
-                const otherParticipant = data.newConversation.participants.find(p => p._id !== authUser._id);
+                const otherParticipant = data.newConversation.participants.find(
+                    (p) => p._id !== authUser._id,
+                );
 
                 const formattedNewConversation = {
                     _id: data.newConversation._id,
@@ -45,13 +64,12 @@ const useSendMessage = () => {
                     profilePic: otherParticipant.profilePic,
                     participantId: otherParticipant._id,
                     username: otherParticipant.username,
-                    isPublic: otherParticipant.isPublic
+                    isPublic: otherParticipant.isPublic,
                 };
 
                 setConversations([formattedNewConversation, ...conversations]);
                 setSelectedConversation(formattedNewConversation);
             }
-
         } catch (error) {
             console.error("Error sending message:", error.message);
             notifications.show({ message: error.message, color: "red" });

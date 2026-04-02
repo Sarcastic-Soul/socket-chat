@@ -7,10 +7,12 @@ const Conversations = () => {
     const { loading } = useGetConversations();
     const { conversations, searchTerm } = useConversation();
 
-    const filteredConversations = conversations.filter((conv) => {
-        const name = conv.isGroupChat ? conv.groupName : conv.fullName;
-        return name.toLowerCase().includes(searchTerm.toLowerCase());
-    });
+    const filteredConversations = conversations
+        .filter((conv) => {
+            const name = conv.isGroupChat ? conv.groupName : conv.fullName;
+            return name.toLowerCase().includes(searchTerm.toLowerCase());
+        })
+        .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 
     return (
         <ScrollArea type="auto" offsetScrollbars style={{ flex: 1 }}>

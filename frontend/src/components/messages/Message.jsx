@@ -139,6 +139,15 @@ const Message = ({ message }) => {
                                             objectFit: "cover",
                                         }}
                                     />
+                                ) : message.mediaType === "audio" ? (
+                                    <audio
+                                        src={message.mediaUrl}
+                                        controls
+                                        style={{
+                                            maxWidth: "100%",
+                                            width: 250,
+                                        }}
+                                    />
                                 ) : (
                                     <video
                                         src={message.mediaUrl}

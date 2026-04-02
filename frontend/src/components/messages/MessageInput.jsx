@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { FiSend, FiSmile, FiPaperclip } from "react-icons/fi";
+import { FiSend, FiSmile, FiPaperclip, FiMic, FiSquare } from "react-icons/fi";
 import EmojiPicker from "emoji-picker-react";
 import useSendMessage from "../../hooks/useSendMessage";
 import { notifications } from "@mantine/notifications";
@@ -32,6 +32,9 @@ const MessageInput = () => {
     const { authUser } = useAuthContext();
     const [isGenerating, setIsGenerating] = useState(false);
     const [selectedTone, setSelectedTone] = useState("Auto");
+    const [isRecording, setIsRecording] = useState(false);
+    const mediaRecorderRef = useRef(null);
+    const audioChunksRef = useRef([]);
 
     const tones = [
         { label: "Auto", value: "Auto" },
@@ -118,6 +121,49 @@ const MessageInput = () => {
         reader.readAsDataURL(selectedFile);
     };
 
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                audio: true,
+            });
+            mediaRecorderRef.current = new MediaRecorder(stream);
+            audioChunksRef.current = [];
+
+            mediaRecorderRef.current.ondataavailable = (e) => {
+                if (e.data.size > 0) audioChunksRef.current.push(e.data);
+            };
+
+            mediaRecorderRef.current.onstop = () => {
+                const blob = new Blob(audioChunksRef.current, {
+                    type: "audio/webm",
+                });
+                const audioFile = new File([blob], "voice-message.webm", {
+                    type: "audio/webm",
+                });
+                setFile(audioFile);
+                setPreviewUrl(URL.createObjectURL(blob));
+            };
+
+            mediaRecorderRef.current.start();
+            setIsRecording(true);
+        } catch (error) {
+            notifications.show({
+                message: "Microphone access denied",
+                color: "red",
+            });
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && isRecording) {
+            mediaRecorderRef.current.stop();
+            setIsRecording(false);
+            mediaRecorderRef.current.stream
+                .getTracks()
+                .forEach((t) => t.stop());
+        }
+    };
+
     const clearFile = () => {
         setFile(null);
         setPreviewUrl(null);
@@ -161,7 +207,11 @@ const MessageInput = () => {
 
                 media = {
                     url: uploadData.secure_url,
-                    type: file.type.startsWith("video/") ? "video" : "image",
+                    type: file.type.startsWith("video/")
+                        ? "video"
+                        : file.type.startsWith("audio/")
+                          ? "audio"
+                          : "image",
                 };
             } catch (error) {
                 notifications.show({
@@ -220,6 +270,8 @@ const MessageInput = () => {
                                 style={{ maxHeight: 150, borderRadius: 8 }}
                                 controls
                             />
+                        ) : file.type.startsWith("audio/") ? (
+                            <audio src={previewUrl} controls />
                         ) : (
                             <Image
                                 src={previewUrl}
@@ -288,9 +340,29 @@ const MessageInput = () => {
                         styles={{ input: { padding: 0 } }}
                     />
 
+                    <ActionIcon
+                        type="button"
+                        variant={isRecording ? "filled" : "subtle"}
+                        color={isRecording ? "red" : "gray"}
+                        size="lg"
+                        radius="xl"
+                        onClick={isRecording ? stopRecording : startRecording}
+                        title={
+                            isRecording
+                                ? "Stop recording"
+                                : "Record voice message"
+                        }
+                    >
+                        {isRecording ? (
+                            <FiSquare size={18} />
+                        ) : (
+                            <FiMic size={18} />
+                        )}
+                    </ActionIcon>
+
                     <FileButton
                         onChange={handleFileChange}
-                        accept="image/png,image/jpeg,image/gif,video/mp4"
+                        accept="image/png,image/jpeg,image/gif,video/mp4,audio/*"
                         resetRef={resetRef}
                     >
                         {(props) => (
@@ -314,7 +386,12 @@ const MessageInput = () => {
                         onChange={(e) => setMessage(e.currentTarget.value)}
                         radius="xl"
                         size="md"
-                        disabled={loading || isUploading || isGenerating}
+                        disabled={
+                            loading ||
+                            isUploading ||
+                            isGenerating ||
+                            isRecording
+                        }
                         autoComplete="off"
                     />
 
@@ -324,7 +401,7 @@ const MessageInput = () => {
                         size="lg"
                         radius="xl"
                         loading={loading || isUploading}
-                        disabled={!message.trim() && !file}
+                        disabled={(!message.trim() && !file) || isRecording}
                         title="Send"
                     >
                         {!(loading || isUploading) && <FiSend size={18} />}

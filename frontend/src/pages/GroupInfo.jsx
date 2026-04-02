@@ -8,6 +8,8 @@ import {
     FiCamera,
     FiEdit2,
     FiTrash2,
+    FiShield,
+    FiShieldOff,
 } from "react-icons/fi";
 import {
     Center,
@@ -231,21 +233,82 @@ const GroupInfo = () => {
     const handleRemoveMember = async (userId) => {
         try {
             const res = await fetch(
-                `${import.meta.env.VITE_API_URL || ""}/api/groups/${groupId}/remove`,
+                `${import.meta.env.VITE_API_URL || ""}/api/groups/${groupId}/participants/remove`,
                 {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ userId }),
+                    body: JSON.stringify({ userIdToRemove: userId }),
                 },
             );
             const data = await res.json();
             if (data.error) throw new Error(data.error);
 
-            setGroup(data);
+            setGroup((prev) => ({
+                ...prev,
+                participants: prev.participants.filter((p) => p._id !== userId),
+                admins: prev.admins.filter((a) => a._id !== userId),
+            }));
             notifications.show({ message: "Member removed", color: "green" });
         } catch (error) {
             notifications.show({
                 message: error.message || "Failed to remove member",
+                color: "red",
+            });
+        }
+    };
+
+    const handleDismissAdmin = async (userIdToDismiss) => {
+        try {
+            const res = await fetch(
+                `${import.meta.env.VITE_API_URL || ""}/api/groups/${groupId}/admins/remove`,
+                {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ userIdToDismiss }),
+                },
+            );
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+
+            setGroup((prev) => ({
+                ...prev,
+                admins: prev.admins.filter((a) => a._id !== userIdToDismiss),
+            }));
+            notifications.show({ message: "Admin dismissed", color: "green" });
+        } catch (error) {
+            notifications.show({
+                message: error.message || "Failed to dismiss admin",
+                color: "red",
+            });
+        }
+    };
+
+    const handleMakeAdmin = async (userIdToMakeAdmin) => {
+        try {
+            const res = await fetch(
+                `${import.meta.env.VITE_API_URL || ""}/api/groups/${groupId}/admins/add`,
+                {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ userIdToMakeAdmin }),
+                },
+            );
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+
+            setGroup((prev) => {
+                const newAdmin = prev.participants.find(
+                    (p) => p._id === userIdToMakeAdmin,
+                );
+                return {
+                    ...prev,
+                    admins: [...prev.admins, newAdmin],
+                };
+            });
+            notifications.show({ message: "User made admin", color: "green" });
+        } catch (error) {
+            notifications.show({
+                message: error.message || "Failed to make admin",
                 color: "red",
             });
         }
@@ -261,7 +324,7 @@ const GroupInfo = () => {
 
     if (!group) return null;
 
-    const isAdmin = group.admin === authUser._id;
+    const isAdmin = group.admins?.some((admin) => admin._id === authUser._id);
 
     return (
         <Center mih="100vh" p="md">
@@ -377,8 +440,9 @@ const GroupInfo = () => {
                 <ScrollArea h={300} offsetScrollbars>
                     <Stack gap="xs">
                         {group.participants.map((participant) => {
-                            const isParticipantAdmin =
-                                participant._id === group.admin;
+                            const isParticipantAdmin = group.admins?.some(
+                                (admin) => admin._id === participant._id,
+                            );
                             return (
                                 <Paper
                                     key={participant._id}
@@ -425,20 +489,54 @@ const GroupInfo = () => {
                                                     Admin
                                                 </Badge>
                                             )}
+                                            {isAdmin &&
+                                                isParticipantAdmin &&
+                                                group.admins.length > 1 && (
+                                                    <ActionIcon
+                                                        variant="light"
+                                                        color="orange"
+                                                        onClick={() =>
+                                                            handleDismissAdmin(
+                                                                participant._id,
+                                                            )
+                                                        }
+                                                        title="Dismiss Admin"
+                                                    >
+                                                        <FiShieldOff
+                                                            size={12}
+                                                        />
+                                                    </ActionIcon>
+                                                )}
                                             {isAdmin && !isParticipantAdmin && (
                                                 <ActionIcon
                                                     variant="light"
-                                                    color="red"
+                                                    color="blue"
                                                     onClick={() =>
-                                                        handleRemoveMember(
+                                                        handleMakeAdmin(
                                                             participant._id,
                                                         )
                                                     }
-                                                    title="Remove Member"
+                                                    title="Make Admin"
                                                 >
-                                                    <FiTrash2 size={12} />
+                                                    <FiShield size={12} />
                                                 </ActionIcon>
                                             )}
+                                            {isAdmin &&
+                                                (group.admins.length > 1 ||
+                                                    !isParticipantAdmin) && (
+                                                    <ActionIcon
+                                                        variant="light"
+                                                        color="red"
+                                                        onClick={() =>
+                                                            handleRemoveMember(
+                                                                participant._id,
+                                                            )
+                                                        }
+                                                        title="Remove Member"
+                                                    >
+                                                        <FiTrash2 size={12} />
+                                                    </ActionIcon>
+                                                )}
                                         </MantineGroup>
                                     </MantineGroup>
                                 </Paper>

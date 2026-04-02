@@ -5,6 +5,7 @@ import {
     addParticipant,
     removeParticipant,
     makeAdmin,
+    dismissAdmin,
     getGroupDetails,
     updateGroup,
     deleteGroup,
@@ -15,11 +16,12 @@ const router = express.Router();
 
 router.post("/create", protectRoute, createGroup);
 router.put("/:groupId/update", protectRoute, updateGroup);
-router.delete("/:groupId/delete", protectRoute, deleteGroup)
+router.delete("/:groupId/delete", protectRoute, deleteGroup);
 router.get("/:groupId", protectRoute, getGroupDetails);
 router.put("/:groupId/name", protectRoute, updateGroupName);
 router.put("/:groupId/participants/add", protectRoute, addParticipant);
 router.put("/:groupId/participants/remove", protectRoute, removeParticipant);
 router.put("/:groupId/admins/add", protectRoute, makeAdmin);
+router.put("/:groupId/admins/remove", protectRoute, dismissAdmin);
 
 export default router;

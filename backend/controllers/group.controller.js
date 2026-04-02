@@ -47,11 +47,9 @@ export const createGroup = async (req, res) => {
                     .json({ error: `User with ID ${pId} not found.` });
             }
             if (userToInclude.isPublic === false) {
-                return res
-                    .status(403)
-                    .json({
-                        error: `Cannot include private user ${userToInclude.username} in a new group.`,
-                    });
+                return res.status(403).json({
+                    error: `Cannot include private user ${userToInclude.username} in a new group.`,
+                });
             }
         }
 
@@ -209,6 +207,15 @@ export const removeParticipant = async (req, res) => {
                 .json({ error: "Only admins can remove participants." });
         }
 
+        if (
+            group.admins.includes(userIdToRemove) &&
+            group.admins.length === 1
+        ) {
+            return res
+                .status(400)
+                .json({ error: "Cannot remove the only admin." });
+        }
+
         group.participants = group.participants.filter(
             (p) => p.toString() !== userIdToRemove,
         );
@@ -221,6 +228,46 @@ export const removeParticipant = async (req, res) => {
         res.status(200).json(group);
     } catch (error) {
         console.error("Error in removeParticipant: ", error.message);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+export const dismissAdmin = async (req, res) => {
+    try {
+        const { groupId } = req.params;
+        const { userIdToDismiss } = req.body;
+        const userId = req.user._id;
+
+        const group = await Conversation.findById(groupId);
+
+        if (!group) {
+            return res.status(404).json({ error: "Group not found" });
+        }
+
+        if (!group.admins.includes(userId)) {
+            return res
+                .status(403)
+                .json({ error: "Only admins can dismiss other admins." });
+        }
+
+        if (!group.admins.includes(userIdToDismiss)) {
+            return res.status(400).json({ error: "User is not an admin." });
+        }
+
+        if (group.admins.length === 1) {
+            return res
+                .status(400)
+                .json({ error: "Cannot dismiss the only admin." });
+        }
+
+        group.admins = group.admins.filter(
+            (adminId) => adminId.toString() !== userIdToDismiss,
+        );
+
+        await group.save();
+        res.status(200).json(group);
+    } catch (error) {
+        console.error("Error in dismissAdmin: ", error.message);
         res.status(500).json({ error: "Internal server error" });
     }
 };

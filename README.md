@@ -48,6 +48,8 @@ A real-time chat application built with React (frontend) and Express.js (backend
 - Server-Side Encryption at Rest (AES-256) to protect database message history 🛡️
 - Rate Limiting and Abuse Protection against spam attacks 🚦
 - WhatsApp-style Stale-While-Revalidate caching for instant offline loads ⚡
+- **Magic Reply (AI):** AI-powered smart replies using Google Gemini API with customizable tones ✨
+- Native app-like experience on mobile devices with smooth layout transitions 📱
 - Customizable profile icons and Privacy Controls (Public/Private profiles) 👤
 - Create and manage groups (add/remove members, admin roles, group icons)
 - State management with Zustand 🧠
@@ -59,7 +61,7 @@ A real-time chat application built with React (frontend) and Express.js (backend
 ## Tech Stack 🛠️
 
 - **Frontend:** React, Mantine UI (@mantine/core, @mantine/notifications), Zustand, Socket.io-client, emoji-picker-react, idb, react-icons, react-router-dom
-- **Backend:** Express.js, Socket.io, MongoDB, JWT authentication, bcryptjs, cloudinary, cookie-parser, dotenv, jsonwebtoken, mongoose, express-rate-limit, helmet
+- **Backend:** Express.js, Socket.io, MongoDB, @google/generative-ai (Gemini), JWT authentication, bcryptjs, cloudinary, cookie-parser, dotenv, jsonwebtoken, mongoose, express-rate-limit, helmet
 
 ## 📂 Project Structure
 
@@ -119,6 +121,7 @@ CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
 CLOUDINARY_API_KEY=your_cloudinary_api_key
 CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 ENCRYPTION_KEY=your_super_secret_32_character_key
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
 ### Seeding the Database 🌱
@@ -159,6 +162,9 @@ bun run dev
 - Messages load instantly using advanced offline caching, syncing automatically in the background
 - Personalize your UI experience with Light/Dark mode and custom theme colors 🎨
 - All messages are AES-256 encrypted at rest inside the database for maximum privacy 🔐
+- Instantly generate AI-powered context-aware responses using the Magic Reply button ✨
+- Quickly find specific past messages using the in-chat search bar 🔍
+- Seamlessly transition between mobile and desktop layouts for chatting on the go 📱
 
 Feel free to contribute or report issues.  
 **Happy chatting! 🚀**

@@ -46,7 +46,7 @@ const seedDatabase = async () => {
                 password: hashedPassword,
                 profilePic:
                     "https://ui-avatars.com/api/?name=Charlie+Private&background=random",
-                isPublic: false, // Private user
+                isPublic: false,
             },
             {
                 fullName: "David Lee",
@@ -72,10 +72,27 @@ const seedDatabase = async () => {
                     "https://ui-avatars.com/api/?name=Frank+Castle&background=random",
                 isPublic: true,
             },
+            {
+                fullName: "Grace Hopper",
+                username: "grace",
+                password: hashedPassword,
+                profilePic:
+                    "https://ui-avatars.com/api/?name=Grace+Hopper&background=random",
+                isPublic: true,
+            },
+            {
+                fullName: "Henry Ford",
+                username: "henry",
+                password: hashedPassword,
+                profilePic:
+                    "https://ui-avatars.com/api/?name=Henry+Ford&background=random",
+                isPublic: true,
+            },
         ];
 
         const createdUsers = await User.insertMany(usersData);
-        const [alice, bob, charlie, david, emma, frank] = createdUsers;
+        const [alice, bob, charlie, david, emma, frank, grace, henry] =
+            createdUsers;
 
         console.log("💬 Creating 1-on-1 conversation (Alice & Bob)...");
         const conv1 = await Conversation.create({
@@ -83,41 +100,95 @@ const seedDatabase = async () => {
             isGroupChat: false,
         });
 
-        const msg1 = await Message.create({
-            senderId: alice._id,
-            receiverId: conv1._id,
-            message: encryptText("Hey Bob, how are you?"),
-            status: "read",
-        });
+        // Create a long list of messages for Alice & Bob to test search, scrolling, and magic reply
+        const aliceBobMessages = [
+            {
+                sender: alice,
+                text: "Hey Bob, how have you been?",
+                status: "read",
+            },
+            {
+                sender: bob,
+                text: "I'm doing great Alice! Just testing out the new chat app features.",
+                status: "read",
+                reaction: { userId: alice._id, emoji: "❤️" },
+            },
+            {
+                sender: alice,
+                text: "Same here. I heard they added search and magic replies.",
+                status: "read",
+            },
+            {
+                sender: bob,
+                text: "Yeah! Let's test the search feature. Can you find the word 'banana' in this chat?",
+                status: "read",
+            },
+            {
+                sender: alice,
+                text: "Haha, I see what you did there. Banana found!",
+                status: "read",
+                reaction: { userId: bob._id, emoji: "😂" },
+            },
+            {
+                sender: bob,
+                text: "Look at this cool image I found!",
+                status: "read",
+                mediaUrl:
+                    "https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0",
+                mediaType: "image",
+            },
+            {
+                sender: alice,
+                text: "Wow, that is beautiful! 😮",
+                status: "read",
+                reaction: { userId: bob._id, emoji: "👍" },
+            },
+            {
+                sender: bob,
+                text: "What are your plans for the weekend?",
+                status: "read",
+            },
+            {
+                sender: alice,
+                text: "Probably just relaxing and doing some coding. You?",
+                status: "read",
+            },
+            {
+                sender: bob,
+                text: "I might go hiking if the weather is nice.",
+                status: "read",
+            },
+            {
+                sender: alice,
+                text: "That sounds awesome. Make sure to take pictures!",
+                status: "read",
+            },
+            {
+                sender: bob,
+                text: "Will do. Btw, have you tried the new video calling yet?",
+                status: "sent",
+            },
+        ];
 
-        const msg2 = await Message.create({
-            senderId: bob._id,
-            receiverId: conv1._id,
-            message: encryptText("I'm doing great Alice! Testing the new app."),
-            status: "read",
-        });
-
-        const msg3 = await Message.create({
-            senderId: alice._id,
-            receiverId: conv1._id,
-            message: encryptText(
-                "The new encryption feature works perfectly! 🔐",
-            ),
-            status: "read",
-            reactions: [
-                { userId: bob._id, reaction: "🔥" },
-                { userId: alice._id, reaction: "❤️" },
-            ],
-        });
-
-        const msg3b = await Message.create({
-            senderId: bob._id,
-            receiverId: conv1._id,
-            message: encryptText("Have you tested the new video calling yet?"),
-            status: "sent",
-        });
-
-        conv1.messages.push(msg1._id, msg2._id, msg3._id, msg3b._id);
+        for (const msgData of aliceBobMessages) {
+            const msg = await Message.create({
+                senderId: msgData.sender._id,
+                receiverId: conv1._id,
+                message: msgData.text ? encryptText(msgData.text) : "",
+                status: msgData.status,
+                mediaUrl: msgData.mediaUrl || null,
+                mediaType: msgData.mediaType || "text",
+                reactions: msgData.reaction
+                    ? [
+                          {
+                              userId: msgData.reaction.userId,
+                              reaction: msgData.reaction.emoji,
+                          },
+                      ]
+                    : [],
+            });
+            conv1.messages.push(msg._id);
+        }
         await conv1.save();
 
         console.log("💬 Creating 1-on-1 conversation (Bob & Charlie)...");
@@ -126,7 +197,7 @@ const seedDatabase = async () => {
             isGroupChat: false,
         });
 
-        const msg4 = await Message.create({
+        const msg13 = await Message.create({
             senderId: bob._id,
             receiverId: conv2._id,
             message: encryptText(
@@ -135,7 +206,7 @@ const seedDatabase = async () => {
             status: "read",
         });
 
-        const msg5 = await Message.create({
+        const msg14 = await Message.create({
             senderId: charlie._id,
             receiverId: conv2._id,
             message: encryptText(
@@ -145,7 +216,7 @@ const seedDatabase = async () => {
             reactions: [{ userId: bob._id, reaction: "👍" }],
         });
 
-        conv2.messages.push(msg4._id, msg5._id);
+        conv2.messages.push(msg13._id, msg14._id);
         await conv2.save();
 
         console.log("💬 Creating 1-on-1 conversation (Emma & Frank)...");
@@ -154,7 +225,7 @@ const seedDatabase = async () => {
             isGroupChat: false,
         });
 
-        const msg6 = await Message.create({
+        const msg15 = await Message.create({
             senderId: emma._id,
             receiverId: conv3._id,
             message: encryptText(
@@ -163,7 +234,7 @@ const seedDatabase = async () => {
             status: "read",
         });
 
-        const msg7 = await Message.create({
+        const msg16 = await Message.create({
             senderId: frank._id,
             receiverId: conv3._id,
             message: encryptText(
@@ -173,49 +244,89 @@ const seedDatabase = async () => {
             reactions: [{ userId: emma._id, reaction: "😎" }],
         });
 
-        conv3.messages.push(msg6._id, msg7._id);
+        conv3.messages.push(msg15._id, msg16._id);
         await conv3.save();
 
-        console.log("👥 Creating Group Chat (Alice, Bob, David, Emma)...");
+        console.log(
+            "👥 Creating Group Chat (Alice, Bob, David, Emma, Frank)...",
+        );
         const groupConv = await Conversation.create({
-            participants: [alice._id, bob._id, david._id, emma._id],
+            participants: [alice._id, bob._id, david._id, emma._id, frank._id],
             isGroupChat: true,
-            groupName: "The Cool Group 😎",
-            admins: [alice._id],
+            groupName: "The Dev Team 💻",
+            admins: [alice._id, bob._id], // Multiple admins to test dismiss admin feature
         });
 
-        const groupMsg1 = await Message.create({
-            senderId: alice._id,
-            receiverId: groupConv._id,
-            message: encryptText("Welcome to the group guys!"),
-            status: "read",
-        });
+        const groupMessages = [
+            {
+                sender: alice,
+                text: "Welcome to the group guys! I've made Bob an admin too.",
+                status: "read",
+            },
+            {
+                sender: bob,
+                text: "Thanks Alice! Now I can add or remove people too.",
+                status: "read",
+                reaction: { userId: alice._id, emoji: "🎉" },
+            },
+            {
+                sender: david,
+                text: "Glad to be here! When is the next meeting?",
+                status: "read",
+            },
+            {
+                sender: emma,
+                text: "I think it's on Tuesday. Alice can confirm.",
+                status: "read",
+            },
+            {
+                sender: frank,
+                text: "Can we test the video call feature in a group?",
+                status: "read",
+            },
+            {
+                sender: alice,
+                text: "Currently we only support 1-on-1 video calls, but group calls are coming soon!",
+                status: "read",
+                reaction: { userId: frank._id, emoji: "😢" },
+            },
+            {
+                sender: bob,
+                text: "Let's test the search feature here. Everyone say a random fruit.",
+                status: "read",
+            },
+            { sender: david, text: "Apple 🍎", status: "read" },
+            { sender: emma, text: "Mango 🥭", status: "read" },
+            {
+                sender: frank,
+                text: "Watermelon 🍉",
+                status: "sent",
+                reaction: { userId: david._id, emoji: "😂" },
+            },
+        ];
 
-        const groupMsg2 = await Message.create({
-            senderId: david._id,
-            receiverId: groupConv._id,
-            message: encryptText("Glad to be here!"),
-            status: "read",
-            reactions: [{ userId: alice._id, reaction: "🎉" }],
-        });
-
-        const groupMsg3 = await Message.create({
-            senderId: emma._id,
-            receiverId: groupConv._id,
-            message: encryptText(
-                "Hey everyone! We should test a group call sometime soon.",
-            ),
-            status: "sent",
-            reactions: [
-                { userId: bob._id, reaction: "💯" },
-                { userId: david._id, reaction: "👍" },
-            ],
-        });
-
-        groupConv.messages.push(groupMsg1._id, groupMsg2._id, groupMsg3._id);
+        for (const msgData of groupMessages) {
+            const msg = await Message.create({
+                senderId: msgData.sender._id,
+                receiverId: groupConv._id,
+                message: msgData.text ? encryptText(msgData.text) : "",
+                status: msgData.status,
+                reactions: msgData.reaction
+                    ? [
+                          {
+                              userId: msgData.reaction.userId,
+                              reaction: msgData.reaction.emoji,
+                          },
+                      ]
+                    : [],
+            });
+            groupConv.messages.push(msg._id);
+        }
         await groupConv.save();
 
-        console.log("🎉 Database seeded successfully!");
+        console.log(
+            "🎉 Database seeded successfully with extensive mock data!",
+        );
         process.exit(0);
     } catch (error) {
         console.error("❌ Error seeding database:", error);

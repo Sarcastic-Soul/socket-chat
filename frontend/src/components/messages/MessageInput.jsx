@@ -14,7 +14,10 @@ import {
     Image,
     CloseButton,
     Indicator,
+    Select,
 } from "@mantine/core";
+import useConversation from "../../zustand/useConversation";
+import { useAuthContext } from "../../context/AuthContext";
 
 const MessageInput = () => {
     const [message, setMessage] = useState("");
@@ -25,6 +28,72 @@ const MessageInput = () => {
     const { loading, sendMessage } = useSendMessage();
     const { colorScheme } = useMantineColorScheme();
     const resetRef = useRef(null);
+    const messages = useConversation((state) => state.messages);
+    const { authUser } = useAuthContext();
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [selectedTone, setSelectedTone] = useState("Auto");
+
+    const tones = [
+        { label: "Auto", value: "Auto" },
+        { label: "Pro", value: "Professional" },
+        { label: "Casual", value: "Casual" },
+        { label: "Funny", value: "Funny" },
+    ];
+
+    const handleMagicReply = async () => {
+        if (isGenerating) return;
+        setIsGenerating(true);
+        const originalMessage = message;
+        setMessage("✨ Drafting...");
+
+        try {
+            const lastMessages = messages.slice(-5).map((m) => {
+                const senderId = m.senderId?._id || m.senderId;
+                const isMe = senderId === authUser?._id;
+
+                return {
+                    sender: isMe
+                        ? "Me"
+                        : m.senderId?.username || m.senderId || "Other User",
+                    text: m.message,
+                };
+            });
+
+            const res = await fetch(
+                `${import.meta.env.VITE_API_URL || ""}/api/messages/magic-reply`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    credentials: "include",
+                    body: JSON.stringify({
+                        messages: lastMessages,
+                        requestedTone: selectedTone,
+                    }),
+                },
+            );
+
+            const data = await res.json();
+            if (data.reply) {
+                setMessage(data.reply);
+            } else {
+                setMessage(originalMessage);
+                notifications.show({
+                    message: data.error || "Could not generate reply",
+                    color: "red",
+                });
+            }
+        } catch (error) {
+            setMessage(originalMessage);
+            notifications.show({
+                message: error.message || "Failed to generate reply",
+                color: "red",
+            });
+        } finally {
+            setIsGenerating(false);
+        }
+    };
 
     const handleFileChange = (selectedFile) => {
         if (!selectedFile) {
@@ -197,6 +266,28 @@ const MessageInput = () => {
                         </Popover.Dropdown>
                     </Popover>
 
+                    <ActionIcon
+                        variant="subtle"
+                        size="lg"
+                        radius="xl"
+                        onClick={handleMagicReply}
+                        disabled={isGenerating || messages.length === 0}
+                        title="Magic Reply"
+                    >
+                        ✨
+                    </ActionIcon>
+
+                    <Select
+                        data={tones}
+                        value={selectedTone}
+                        onChange={setSelectedTone}
+                        size="sm"
+                        w={90}
+                        disabled={isGenerating}
+                        variant="unstyled"
+                        styles={{ input: { padding: 0 } }}
+                    />
+
                     <FileButton
                         onChange={handleFileChange}
                         accept="image/png,image/jpeg,image/gif,video/mp4"
@@ -223,7 +314,7 @@ const MessageInput = () => {
                         onChange={(e) => setMessage(e.currentTarget.value)}
                         radius="xl"
                         size="md"
-                        disabled={loading || isUploading}
+                        disabled={loading || isUploading || isGenerating}
                         autoComplete="off"
                     />
 

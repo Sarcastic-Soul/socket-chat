@@ -1,3 +1,4 @@
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import Conversation from "../models/conversation.model.js";
 import Message from "../models/message.model.js";
 import User from "../models/user.model.js";
@@ -247,5 +248,53 @@ export const addReaction = async (req, res) => {
     } catch (error) {
         console.error("Error in addReaction controller: ", error.message);
         res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+export const generateMagicReply = async (req, res) => {
+    try {
+        const { messages, requestedTone } = req.body;
+
+        if (!process.env.GEMINI_API_KEY) {
+            return res
+                .status(500)
+                .json({ error: "Gemini API key is missing." });
+        }
+
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({
+            model: "gemini-2.5-flash",
+        });
+
+        const conversationContext = messages
+            .map((msg) => `${msg.sender}: ${msg.text}`)
+            .join("\n");
+
+        let prompt = `You are helping a user write a reply in a chat app.
+
+Here is the recent conversation history:
+${conversationContext}
+
+Instructions:
+1. Write the NEXT message that "Me" (the user) should send.
+2. The response should be concise, natural, and fit the flow of the conversation.
+3. DO NOT wrap the response in quotes or add conversational filler. Just return the exact text to be sent.
+`;
+
+        if (requestedTone && requestedTone !== "Auto") {
+            prompt += `4. The user has specifically requested this tone/action: [${requestedTone}]. You MUST follow this tone strictly.`;
+        } else {
+            prompt += `4. No specific tone was requested. Analyze the conversation history and MATCH the existing tone, formality, and style of the chat.`;
+        }
+
+        const result = await model.generateContent(prompt);
+        let replyText = result.response.text().trim();
+
+        replyText = replyText.replace(/^["']|["']$/g, "");
+
+        res.json({ reply: replyText });
+    } catch (error) {
+        console.error("Error generating magic reply:", error);
+        res.status(500).json({ error: "Failed to generate reply" });
     }
 };

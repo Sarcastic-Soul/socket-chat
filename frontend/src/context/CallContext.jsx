@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import { useSocketContext } from "./SocketContext";
 import { useAuthContext } from "./AuthContext";
+import useConversation from "../zustand/useConversation";
 import { notifications } from "@mantine/notifications";
 
 export const CallContext = createContext();
@@ -18,6 +19,7 @@ export const useCallContext = () => {
 export const CallContextProvider = ({ children }) => {
     const { socket } = useSocketContext();
     const { authUser } = useAuthContext();
+    const { addMessage } = useConversation();
 
     const [localStream, setLocalStream] = useState(null);
     const [remoteStream, setRemoteStream] = useState(null);
@@ -27,11 +29,18 @@ export const CallContextProvider = ({ children }) => {
     const [isCalling, setIsCalling] = useState(false);
     const [receivingCall, setReceivingCall] = useState(false);
 
+    // Call Controls State
+    const [isMuted, setIsMuted] = useState(false);
+    const [isVideoOff, setIsVideoOff] = useState(false);
+    const [remoteVideoOff, setRemoteVideoOff] = useState(false);
+
     const connectionRef = useRef(null);
     const localVideoRef = useRef(null);
     const remoteVideoRef = useRef(null);
     const streamRef = useRef(null);
     const pendingCandidates = useRef([]);
+    const callStartTimeRef = useRef(null);
+    const endCallCleanupRef = useRef();
 
     const configuration = {
         iceServers: [
@@ -67,11 +76,12 @@ export const CallContextProvider = ({ children }) => {
         });
 
         socket.on("callEnded", () => {
-            endCallCleanup();
+            if (endCallCleanupRef.current) endCallCleanupRef.current();
         });
 
         socket.on("callAccepted", async (signal) => {
             setCallAccepted(true);
+            callStartTimeRef.current = Date.now();
             if (
                 connectionRef.current &&
                 connectionRef.current.signalingState !== "closed"
@@ -106,21 +116,65 @@ export const CallContextProvider = ({ children }) => {
             }
         });
 
+        socket.on("peerVideoToggled", (isVideoOff) => {
+            setRemoteVideoOff(isVideoOff);
+        });
+
         return () => {
             socket.off("incomingCall");
             socket.off("callEnded");
             socket.off("callAccepted");
             socket.off("iceCandidate");
+            socket.off("peerVideoToggled");
         };
     }, [socket]);
 
+    
+    useEffect(() => {
+        endCallCleanupRef.current = endCallCleanup;
+    });
+
     const endCallCleanup = () => {
+        // Send Call Log if caller
+        if (isCalling && call.userToCall) {
+            const duration = callStartTimeRef.current ? Date.now() - callStartTimeRef.current : 0;
+            let logText = "Missed call";
+            
+            if (duration > 0) {
+                const totalSeconds = Math.floor(duration / 1000);
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = totalSeconds % 60;
+                const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                logText = `Call ended • ${formattedTime}`;
+            }
+
+            fetch(`${import.meta.env.VITE_API_URL}/api/messages/send/${call.userToCall}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: logText, isCall: true }),
+                credentials: "include"
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.newMessage) {
+                    addMessage(data.newMessage);
+                }
+            })
+            .catch(console.error);
+        }
+        
+        callStartTimeRef.current = null;
         setCallEnded(false);
+
         setCallAccepted(false);
         setIsCalling(false);
         setReceivingCall(false);
         setCall({});
         pendingCandidates.current = [];
+        
+        setIsMuted(false);
+        setIsVideoOff(false);
+        setRemoteVideoOff(false);
 
         if (streamRef.current) {
             streamRef.current.getTracks().forEach((track) => track.stop());
@@ -150,7 +204,6 @@ export const CallContextProvider = ({ children }) => {
         } catch (error) {
             console.error("Failed to access media devices with video:", error);
 
-            // Fallback to audio only if video fails (e.g., no webcam)
             try {
                 const audioStream = await navigator.mediaDevices.getUserMedia({
                     video: false,
@@ -166,12 +219,10 @@ export const CallContextProvider = ({ children }) => {
                     message: "Proceeding with audio only.",
                     color: "yellow",
                 });
+                setIsVideoOff(true);
                 return audioStream;
             } catch (audioError) {
-                console.error(
-                    "Failed to access any media devices:",
-                    audioError,
-                );
+                console.error("Failed to access any media devices:", audioError);
                 notifications.show({
                     title: "Hardware Error",
                     message: "Could not access camera or microphone.",
@@ -275,6 +326,36 @@ export const CallContextProvider = ({ children }) => {
         endCallCleanup();
     };
 
+    // Toggle Audio
+    const toggleMute = () => {
+        if (streamRef.current) {
+            const audioTrack = streamRef.current.getAudioTracks()[0];
+            if (audioTrack) {
+                audioTrack.enabled = !audioTrack.enabled;
+                setIsMuted(!audioTrack.enabled);
+            }
+        }
+    };
+
+    // Toggle Video
+    const toggleVideo = () => {
+        if (streamRef.current) {
+            const videoTrack = streamRef.current.getVideoTracks()[0];
+            if (videoTrack) {
+                videoTrack.enabled = !videoTrack.enabled;
+                setIsVideoOff(!videoTrack.enabled);
+                
+                // Notify the other peer
+                if (call.from || call.userToCall) {
+                    socket.emit("toggleVideo", { 
+                        to: call.from || call.userToCall, 
+                        isVideoOff: !videoTrack.enabled 
+                    });
+                }
+            }
+        }
+    };
+
     return (
         <CallContext.Provider
             value={{
@@ -291,6 +372,11 @@ export const CallContextProvider = ({ children }) => {
                 rejectCall,
                 localVideoRef,
                 remoteVideoRef,
+                isMuted,
+                isVideoOff,
+                remoteVideoOff,
+                toggleMute,
+                toggleVideo
             }}
         >
             {children}

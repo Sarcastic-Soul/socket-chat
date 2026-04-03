@@ -17,7 +17,7 @@ import {
     UnstyledButton,
     TextInput,
 } from "@mantine/core";
-import { FiSmile, FiCornerUpLeft, FiEdit2, FiTrash2, FiX, FiCheck } from "react-icons/fi";
+import { FiSmile, FiCornerUpLeft, FiEdit2, FiTrash2, FiX, FiCheck, FiVideo, FiPhoneMissed } from "react-icons/fi";
 import { BsCheck, BsCheckAll } from "react-icons/bs";
 
 const Message = ({ message }) => {
@@ -114,6 +114,34 @@ const Message = ({ message }) => {
         }, {}) || {};
 
     const availableReactions = ["👍", "❤️", "😂", "😮", "😢", "😡"];
+
+    
+    if (message.isCall) {
+        const isMissed = message.message.includes("Missed");
+        return (
+            <Box my="md" style={{ display: 'flex', justifyContent: 'center' }}>
+                <Paper
+                    px="md"
+                    py="xs"
+                    radius="xl"
+                    style={{
+                        backgroundColor: isMissed ? "var(--mantine-color-red-1)" : "var(--mantine-color-gray-1)",
+                        border: `1px solid ${isMissed ? "var(--mantine-color-red-3)" : "var(--mantine-color-gray-3)"}`
+                    }}
+                >
+                    <Group gap="xs" align="center">
+                        {isMissed ? <FiPhoneMissed size={16} color="var(--mantine-color-red-6)" /> : <FiVideo size={16} color="var(--mantine-color-gray-6)" />}
+                        <Text size="sm" fw={600} c={isMissed ? "red.6" : "gray.7"}>
+                            {message.message}
+                        </Text>
+                        <Text size="xs" c="dimmed" ml="xs">
+                            {formattedTime}
+                        </Text>
+                    </Group>
+                </Paper>
+            </Box>
+        );
+    }
 
     return (
         <Group

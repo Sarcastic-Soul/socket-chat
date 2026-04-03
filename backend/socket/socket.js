@@ -1,69 +1,53 @@
 import { Server } from "socket.io";
 import http from "http";
 import express from "express";
-import Conversation from "../models/conversation.model.js";
+import Message from "../models/message.model.js";
 
 const app = express();
-const server = http.createServer(app);
 
-const userSocketMap = {};
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: [
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "https://socket-chat-nine-tau.vercel.app",
+        ],
+        methods: ["GET", "POST"],
+    },
+});
 
 export const getReceiverSocketId = (receiverId) => {
     return userSocketMap[receiverId];
 };
 
-const allowedOrigins = [
-    "https://socket-chat-nine-tau.vercel.app",
-    "http://localhost:3000",
-];
+const userSocketMap = {};
 
-const io = new Server(server, {
-    cors: {
-        origin: allowedOrigins,
-        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        credentials: true,
-        allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
-    },
-});
+io.on("connection", (socket) => {
+    console.log("a user connected", socket.id);
 
-io.on("connection", async (socket) => {
     const userId = socket.handshake.query.userId;
-    if (userId) {
-        userSocketMap[userId] = socket.id;
-
-        // Join user to all their group chat rooms
-        try {
-            const userGroups = await Conversation.find({
-                isGroupChat: true,
-                participants: userId,
-            });
-            userGroups.forEach((group) => {
-                socket.join(group._id.toString());
-            });
-        } catch (error) {
-            console.error("Error joining user to group rooms:", error.message);
-        }
-    }
+    if (userId != "undefined") userSocketMap[userId] = socket.id;
 
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
 
-    // WebRTC Signaling for 1-on-1 Calls
-    socket.on("callUser", (data) => {
-        const receiverSocketId = getReceiverSocketId(data.userToCall);
+    // WebRTC Signaling Events
+    socket.on("callUser", ({ userToCall, signalData, from, callerName, callerPic }) => {
+        const receiverSocketId = getReceiverSocketId(userToCall);
         if (receiverSocketId) {
             io.to(receiverSocketId).emit("incomingCall", {
-                signal: data.signalData,
-                from: data.from,
-                callerName: data.callerName,
-                callerPic: data.callerPic,
+                signal: signalData,
+                from,
+                callerName,
+                callerPic,
             });
         }
     });
 
     socket.on("answerCall", (data) => {
-        const callerSocketId = getReceiverSocketId(data.to);
-        if (callerSocketId) {
-            io.to(callerSocketId).emit("callAccepted", data.signal);
+        const receiverSocketId = getReceiverSocketId(data.to);
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit("callAccepted", data.signal);
         }
     });
 
@@ -81,45 +65,51 @@ io.on("connection", async (socket) => {
         }
     });
 
+    // New event for video toggling
+    socket.on("toggleVideo", (data) => {
+        const receiverSocketId = getReceiverSocketId(data.to);
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit("peerVideoToggled", data.isVideoOff);
+        }
+    });
+
+    // Typing Indicators
     socket.on("typing", (data) => {
-        if (data.isGroupChat) {
-            socket
-                .to(data.conversationId)
-                .emit("typing", {
-                    conversationId: data.conversationId,
-                    userId,
-                });
+        const { receiverId } = data;
+        const receiverSocketId = getReceiverSocketId(receiverId);
+
+        // If it's a group, receiverId will be the conversation/group ID.
+        // We can just broadcast to the room.
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit("typing", data);
         } else {
-            const receiverSocketId = getReceiverSocketId(data.receiverId);
-            if (receiverSocketId) {
-                io.to(receiverSocketId).emit("typing", {
-                    conversationId: data.conversationId,
-                    userId,
-                });
-            }
+            // Group chat broadcast
+            socket.to(receiverId).emit("typing", data);
         }
     });
 
     socket.on("stopTyping", (data) => {
-        if (data.isGroupChat) {
-            socket
-                .to(data.conversationId)
-                .emit("stopTyping", {
-                    conversationId: data.conversationId,
-                    userId,
-                });
+        const { receiverId } = data;
+        const receiverSocketId = getReceiverSocketId(receiverId);
+
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit("stopTyping", data);
         } else {
-            const receiverSocketId = getReceiverSocketId(data.receiverId);
-            if (receiverSocketId) {
-                io.to(receiverSocketId).emit("stopTyping", {
-                    conversationId: data.conversationId,
-                    userId,
-                });
-            }
+            socket.to(receiverId).emit("stopTyping", data);
         }
     });
 
+    // Join Group Room
+    socket.on("joinGroup", (groupId) => {
+        socket.join(groupId);
+    });
+
+    socket.on("leaveGroup", (groupId) => {
+        socket.leave(groupId);
+    });
+
     socket.on("disconnect", () => {
+        console.log("user disconnected", socket.id);
         delete userSocketMap[userId];
         io.emit("getOnlineUsers", Object.keys(userSocketMap));
     });

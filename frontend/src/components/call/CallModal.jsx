@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
-import { Modal, Button, Group, Text, Avatar, Stack, Box } from "@mantine/core";
-import { FiPhoneOff, FiVideo } from "react-icons/fi";
+import { Modal, Button, Group, Text, Avatar, Stack, Box, ActionIcon } from "@mantine/core";
+import { FiPhoneOff, FiVideo, FiVideoOff, FiMic, FiMicOff } from "react-icons/fi";
 import { useCallContext } from "../../context/CallContext";
 
 const CallModal = () => {
@@ -17,14 +17,17 @@ const CallModal = () => {
         remoteStream,
         localVideoRef,
         remoteVideoRef,
+        isMuted,
+        isVideoOff,
+        remoteVideoOff,
+        toggleMute,
+        toggleVideo,
     } = useCallContext();
 
     // Determine visibility states
     const showIncoming = receivingCall && !callAccepted && !callEnded;
     const showActiveCall = (isCalling || callAccepted) && !callEnded;
 
-    // We must manually attach the streams to the video refs once the modal mounts them,
-    // because React unmounts/remounts the <video> tags when the Modal opens.
     useEffect(() => {
         if (showActiveCall) {
             if (localVideoRef.current && localStream) {
@@ -94,16 +97,32 @@ const CallModal = () => {
                 <Box pos="relative" w="100%" h="100%" bg="dark.9">
                     {/* Remote Video (Full Screen) */}
                     {callAccepted ? (
-                        <video
-                            playsInline
-                            autoPlay
-                            ref={remoteVideoRef}
-                            style={{
-                                width: "100%",
-                                height: "100%",
-                                objectFit: "cover",
-                            }}
-                        />
+                        <>
+                            <video
+                                playsInline
+                                autoPlay
+                                ref={remoteVideoRef}
+                                style={{
+                                    width: "100%",
+                                    height: "100%",
+                                    objectFit: "cover",
+                                    display: remoteVideoOff ? "none" : "block",
+                                }}
+                            />
+                            {remoteVideoOff && (
+                                <Stack align="center" justify="center" h="100%">
+                                    <Avatar
+                                        src={call.pic || "/default-avatar.png"}
+                                        size={120}
+                                        radius="100%"
+                                        mb="md"
+                                    />
+                                    <Text size="xl" c="white" fw={600}>
+                                        {call.name || "User"} turned off their camera
+                                    </Text>
+                                </Stack>
+                            )}
+                        </>
                     ) : (
                         <Stack align="center" justify="center" h="100%">
                             <Avatar
@@ -143,12 +162,28 @@ const CallModal = () => {
                                 height: "100%",
                                 objectFit: "cover",
                                 transform: "scaleX(-1)", // Mirror the local video
+                                display: isVideoOff ? "none" : "block",
                             }}
                         />
+                        {isVideoOff && (
+                            <Stack align="center" justify="center" h="100%" bg="dark.7">
+                                <FiVideoOff size={32} color="white" />
+                            </Stack>
+                        )}
                     </Box>
 
                     {/* Controls */}
-                    <Group pos="absolute" bottom={30} w="100%" justify="center">
+                    <Group pos="absolute" bottom={30} w="100%" justify="center" gap="lg">
+                        <ActionIcon
+                            variant="filled"
+                            color={isMuted ? "red" : "dark.5"}
+                            size="xl"
+                            radius="xl"
+                            onClick={toggleMute}
+                        >
+                            {isMuted ? <FiMicOff size={22} /> : <FiMic size={22} />}
+                        </ActionIcon>
+
                         <Button
                             color="red"
                             size="lg"
@@ -158,6 +193,16 @@ const CallModal = () => {
                         >
                             End Call
                         </Button>
+
+                        <ActionIcon
+                            variant="filled"
+                            color={isVideoOff ? "red" : "dark.5"}
+                            size="xl"
+                            radius="xl"
+                            onClick={toggleVideo}
+                        >
+                            {isVideoOff ? <FiVideoOff size={22} /> : <FiVideo size={22} />}
+                        </ActionIcon>
                     </Group>
                 </Box>
             </Modal>

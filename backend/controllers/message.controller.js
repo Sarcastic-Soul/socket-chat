@@ -7,7 +7,7 @@ import { encryptText, decryptText } from "../utils/encryption.js";
 
 export const sendMessage = async (req, res) => {
     try {
-        const { message, mediaUrl, mediaType, replyTo } = req.body;
+        const { message, mediaUrl, mediaType, replyTo, isCall } = req.body;
         const { id: conversationIdOrUserId } = req.params;
         const senderId = req.user._id;
 
@@ -51,6 +51,7 @@ export const sendMessage = async (req, res) => {
             mediaUrl: mediaUrl || null,
             mediaType: mediaType || "text",
             replyTo: replyTo || null,
+            isCall: isCall || false,
         });
 
         conversation.messages.push(newMessage._id);

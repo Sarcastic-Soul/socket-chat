@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import useConversation from "../zustand/useConversation";
 import { notifications } from "@mantine/notifications";
+import useMarkMessagesAsRead from "./useMarkMessagesAsRead";
 import {
     getCachedMessages,
     setCachedMessages,
@@ -9,6 +10,7 @@ import {
 
 const useGetMessages = () => {
     const { messages, setMessages, selectedConversation } = useConversation();
+    const { markAsRead } = useMarkMessagesAsRead();
     const [loading, setLoading] = useState(false);
     const [hasMore, setHasMore] = useState(true);
     const [initialLoad, setInitialLoad] = useState(true);
@@ -54,6 +56,9 @@ const useGetMessages = () => {
             setMessages(chronologicalMessages);
             await setCachedMessages(conversationId, chronologicalMessages);
             setHasMore(data.length === 50);
+
+            // Mark messages as read
+            markAsRead(conversationId);
         } catch (error) {
             console.error("Error fetching messages:", error);
             notifications.show({

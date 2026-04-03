@@ -165,6 +165,9 @@ bun run dev
 - Instantly generate AI-powered context-aware responses using the Magic Reply button ✨
 - Quickly find specific past messages using the in-chat search bar 🔍
 - Seamlessly transition between mobile and desktop layouts for chatting on the go 📱
+- Record and send quick voice messages by clicking the microphone icon 🎤
+- Hover over any message and click the reply icon to send a quoted response 💬
+- See exactly who is typing in real-time with smooth animated indicators ✍️
 
 Feel free to contribute or report issues.  
 **Happy chatting! 🚀**

@@ -3,7 +3,17 @@ import useGetMessages from "../../hooks/useGetMessages";
 import MessageSkeleton from "../skeletons/MessageSkeleton";
 import Message from "./Message";
 import useListenMessages from "../../hooks/useListenMessages";
-import { ScrollArea, Center, Loader, Text, Stack } from "@mantine/core";
+import {
+    ScrollArea,
+    Center,
+    Loader,
+    Text,
+    Stack,
+    Group,
+    Avatar,
+    Paper,
+} from "@mantine/core";
+import useConversation from "../../zustand/useConversation";
 
 const Messages = ({ searchQuery }) => {
     const { messages, loading, loadOlderMessages, hasMore, isLoadingMore } =
@@ -12,6 +22,7 @@ const Messages = ({ searchQuery }) => {
     const observer = useRef();
     const lastMessageRef = useRef();
     const viewportRef = useRef();
+    const { typingUsers, selectedConversation } = useConversation();
 
     const filteredMessages =
         messages?.filter((message) => {
@@ -41,7 +52,7 @@ const Messages = ({ searchQuery }) => {
                 lastMessageRef.current?.scrollIntoView({ behavior: "smooth" });
             }, 100);
         }
-    }, [messages.length]);
+    }, [messages.length, typingUsers.length]);
 
     return (
         <ScrollArea
@@ -73,7 +84,9 @@ const Messages = ({ searchQuery }) => {
 
             {filteredMessages.length > 0 &&
                 filteredMessages.map((message, idx) => {
-                    const isLastMessage = idx === filteredMessages.length - 1;
+                    const isLastMessage =
+                        idx === filteredMessages.length - 1 &&
+                        typingUsers.length === 0;
                     return (
                         <div
                             key={message._id}
@@ -104,6 +117,59 @@ const Messages = ({ searchQuery }) => {
                         </Text>
                     </Center>
                 )}
+
+            {typingUsers.length > 0 && (
+                <Stack gap="xs" mt="sm" ref={lastMessageRef}>
+                    {typingUsers.map((typingUserId) => {
+                        let profilePic = "/default-avatar.png";
+
+                        if (selectedConversation?.isGroupChat) {
+                            const participant =
+                                selectedConversation.participants?.find(
+                                    (p) => p._id === typingUserId,
+                                );
+                            if (participant)
+                                profilePic = participant.profilePic;
+                        } else {
+                            profilePic =
+                                selectedConversation?.profilePic || profilePic;
+                        }
+
+                        return (
+                            <Group
+                                key={typingUserId}
+                                gap="sm"
+                                align="flex-end"
+                                wrap="nowrap"
+                            >
+                                <Avatar
+                                    src={profilePic}
+                                    radius="xl"
+                                    size="md"
+                                />
+                                <Paper
+                                    p="sm"
+                                    radius="lg"
+                                    bg="light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6))"
+                                    style={{
+                                        borderBottomLeftRadius: 4,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        height: 38,
+                                    }}
+                                >
+                                    <Loader
+                                        size="xs"
+                                        type="dots"
+                                        color="gray"
+                                    />
+                                </Paper>
+                            </Group>
+                        );
+                    })}
+                </Stack>
+            )}
         </ScrollArea>
     );
 };

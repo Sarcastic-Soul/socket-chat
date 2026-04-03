@@ -12,9 +12,14 @@ const useListenMessages = () => {
         markMessagesRead,
         setUnreadMessage,
         updateConversation,
+        addTypingUser,
+        removeTypingUser,
+        setTypingUsers,
     } = useConversation();
 
     useEffect(() => {
+        setTypingUsers([]);
+
         const handleNewMessage = (newMessage) => {
             updateConversation({
                 _id: newMessage.receiverId,
@@ -59,10 +64,30 @@ const useListenMessages = () => {
             }
         };
 
+        const handleTyping = ({ conversationId, userId }) => {
+            if (
+                selectedConversation &&
+                selectedConversation._id === conversationId
+            ) {
+                addTypingUser(userId);
+            }
+        };
+
+        const handleStopTyping = ({ conversationId, userId }) => {
+            if (
+                selectedConversation &&
+                selectedConversation._id === conversationId
+            ) {
+                removeTypingUser(userId);
+            }
+        };
+
         if (socket) {
             socket.on("newMessage", handleNewMessage);
             socket.on("messageReaction", handleMessageReaction);
             socket.on("messagesRead", handleMessagesRead);
+            socket.on("typing", handleTyping);
+            socket.on("stopTyping", handleStopTyping);
         }
 
         return () => {
@@ -70,6 +95,8 @@ const useListenMessages = () => {
                 socket.off("newMessage", handleNewMessage);
                 socket.off("messageReaction", handleMessageReaction);
                 socket.off("messagesRead", handleMessagesRead);
+                socket.off("typing", handleTyping);
+                socket.off("stopTyping", handleStopTyping);
             }
         };
     }, [
@@ -80,6 +107,9 @@ const useListenMessages = () => {
         setUnreadMessage,
         selectedConversation,
         updateConversation,
+        addTypingUser,
+        removeTypingUser,
+        setTypingUsers,
     ]);
 };
 

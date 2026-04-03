@@ -19,6 +19,7 @@ import {
 } from "@mantine/core";
 import useConversation from "../../zustand/useConversation";
 import { useAuthContext } from "../../context/AuthContext";
+import { useSocketContext } from "../../context/SocketContext";
 
 const MessageInput = () => {
     const [message, setMessage] = useState("");
@@ -40,12 +41,14 @@ const MessageInput = () => {
         (state) => state.selectedConversation,
     );
     const { authUser } = useAuthContext();
+    const { socket } = useSocketContext();
     const [isGenerating, setIsGenerating] = useState(false);
     const [selectedTone, setSelectedTone] = useState("Auto");
     const [isRecording, setIsRecording] = useState(false);
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
     const inputRef = useRef(null);
+    const typingTimeoutRef = useRef(null);
 
     useEffect(() => {
         if (replyingToMessage && inputRef.current) {
@@ -187,6 +190,30 @@ const MessageInput = () => {
         resetRef.current?.();
     };
 
+    const handleTyping = (e) => {
+        setMessage(e.currentTarget.value);
+
+        if (!socket || !selectedConversation) return;
+
+        socket.emit("typing", {
+            conversationId: selectedConversation._id,
+            receiverId: selectedConversation.participantId,
+            isGroupChat: selectedConversation.isGroupChat,
+        });
+
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+        }
+
+        typingTimeoutRef.current = setTimeout(() => {
+            socket.emit("stopTyping", {
+                conversationId: selectedConversation._id,
+                receiverId: selectedConversation.participantId,
+                isGroupChat: selectedConversation.isGroupChat,
+            });
+        }, 2000);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!message.trim() && !file) return;
@@ -242,6 +269,17 @@ const MessageInput = () => {
         }
 
         try {
+            if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current);
+                if (socket && selectedConversation) {
+                    socket.emit("stopTyping", {
+                        conversationId: selectedConversation._id,
+                        receiverId: selectedConversation.participantId,
+                        isGroupChat: selectedConversation.isGroupChat,
+                    });
+                }
+            }
+
             await sendMessage(message.trim(), media);
             setMessage("");
             clearFile();
@@ -445,7 +483,7 @@ const MessageInput = () => {
                         flex={1}
                         placeholder="Send a message..."
                         value={message}
-                        onChange={(e) => setMessage(e.currentTarget.value)}
+                        onChange={handleTyping}
                         radius="xl"
                         size="md"
                         disabled={

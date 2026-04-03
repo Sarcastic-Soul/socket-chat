@@ -15,6 +15,19 @@ const useConversation = create((set, get) => ({
     replyingToMessage: null,
     setReplyingToMessage: (message) => set({ replyingToMessage: message }),
 
+    typingUsers: [],
+    setTypingUsers: (users) => set({ typingUsers: users }),
+    addTypingUser: (userId) =>
+        set((state) => ({
+            typingUsers: state.typingUsers.includes(userId)
+                ? state.typingUsers
+                : [...state.typingUsers, userId],
+        })),
+    removeTypingUser: (userId) =>
+        set((state) => ({
+            typingUsers: state.typingUsers.filter((id) => id !== userId),
+        })),
+
     conversations: [],
     setConversations: (conversations) => set({ conversations }),
     addConversation: (conversation) =>

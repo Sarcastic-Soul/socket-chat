@@ -81,6 +81,44 @@ io.on("connection", async (socket) => {
         }
     });
 
+    socket.on("typing", (data) => {
+        if (data.isGroupChat) {
+            socket
+                .to(data.conversationId)
+                .emit("typing", {
+                    conversationId: data.conversationId,
+                    userId,
+                });
+        } else {
+            const receiverSocketId = getReceiverSocketId(data.receiverId);
+            if (receiverSocketId) {
+                io.to(receiverSocketId).emit("typing", {
+                    conversationId: data.conversationId,
+                    userId,
+                });
+            }
+        }
+    });
+
+    socket.on("stopTyping", (data) => {
+        if (data.isGroupChat) {
+            socket
+                .to(data.conversationId)
+                .emit("stopTyping", {
+                    conversationId: data.conversationId,
+                    userId,
+                });
+        } else {
+            const receiverSocketId = getReceiverSocketId(data.receiverId);
+            if (receiverSocketId) {
+                io.to(receiverSocketId).emit("stopTyping", {
+                    conversationId: data.conversationId,
+                    userId,
+                });
+            }
+        }
+    });
+
     socket.on("disconnect", () => {
         delete userSocketMap[userId];
         io.emit("getOnlineUsers", Object.keys(userSocketMap));

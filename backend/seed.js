@@ -6,7 +6,8 @@ import Conversation from "./models/conversation.model.js";
 import Message from "./models/message.model.js";
 import { encryptText } from "./utils/encryption.js";
 
-dotenv.config();
+import path from "path";
+dotenv.config({ path: "backend/.env" });
 
 const seedDatabase = async () => {
     try {
@@ -158,6 +159,7 @@ const seedDatabase = async () => {
                 text: "I might go hiking if the weather is nice.",
                 status: "read",
             },
+
             {
                 sender: alice,
                 text: "That sounds awesome. Make sure to take pictures!",
@@ -165,10 +167,29 @@ const seedDatabase = async () => {
             },
             {
                 sender: bob,
+                text: "I actually meant to say mountain biking, not hiking!",
+                status: "read",
+                isEdited: true,
+            },
+            {
+                sender: alice,
+                text: "Oh wow, that's even better!",
+                status: "read",
+            },
+            {
+                sender: alice,
+                text: "This message was deleted",
+                status: "read",
+                isDeleted: true,
+            },
+            {
+                sender: bob,
                 text: "Will do. Btw, have you tried the new video calling yet?",
                 status: "sent",
             },
+
         ];
+
 
         for (const msgData of aliceBobMessages) {
             const msg = await Message.create({
@@ -176,6 +197,9 @@ const seedDatabase = async () => {
                 receiverId: conv1._id,
                 message: msgData.text ? encryptText(msgData.text) : "",
                 status: msgData.status,
+                isEdited: msgData.isEdited || false,
+                isDeleted: msgData.isDeleted || false,
+
                 mediaUrl: msgData.mediaUrl || null,
                 mediaType: msgData.mediaType || "text",
                 reactions: msgData.reaction

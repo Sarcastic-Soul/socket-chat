@@ -48,7 +48,10 @@ A real-time chat application built with React (frontend) and Express.js (backend
 - Server-Side Encryption at Rest (AES-256) to protect database message history 🛡️
 - Rate Limiting and Abuse Protection against spam attacks 🚦
 - WhatsApp-style Stale-While-Revalidate caching for instant offline loads ⚡
+
 - **Magic Reply (AI):** AI-powered smart replies using Google Gemini API with customizable tones ✨
+- Edit Sent Messages to fix typos with a real-time `(edited)` indicator ✏️
+- "Delete for Everyone" to remove messages from active conversations 🗑️
 - Native app-like experience on mobile devices with smooth layout transitions 📱
 - Customizable profile icons and Privacy Controls (Public/Private profiles) 👤
 - Create and manage groups (add/remove members, admin roles, group icons)

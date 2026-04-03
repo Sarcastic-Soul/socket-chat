@@ -5,6 +5,8 @@ import {
     addReaction,
     markMessagesAsRead,
     generateMagicReply,
+    editMessage,
+    deleteMessage,
 } from "../controllers/message.controller.js";
 import protectRoute from "../middleware/protectRoute.js";
 import { messageRateLimiter } from "../middleware/rateLimiter.js";
@@ -22,4 +24,7 @@ router.post(
     generateMagicReply,
 );
 
+
+router.put("/edit/:messageId", protectRoute, messageRateLimiter, editMessage);
+router.delete("/delete/:messageId", protectRoute, messageRateLimiter, deleteMessage);
 export default router;

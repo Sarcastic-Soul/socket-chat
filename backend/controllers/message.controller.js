@@ -319,3 +319,122 @@ Instructions:
         res.status(500).json({ error: "Failed to generate reply" });
     }
 };
+
+export const editMessage = async (req, res) => {
+    try {
+        const { messageId } = req.params;
+        const { message: newText } = req.body;
+        const userId = req.user._id;
+
+        const message = await Message.findById(messageId);
+
+        if (!message) {
+            return res.status(404).json({ error: "Message not found" });
+        }
+
+        if (message.senderId.toString() !== userId.toString()) {
+            return res.status(403).json({ error: "Unauthorized" });
+        }
+
+        message.message = encryptText(newText);
+        message.isEdited = true;
+        await message.save();
+
+        const messageObj = await message.populate([
+            {
+                path: "senderId",
+                select: "fullName profilePic username isPublic",
+            },
+            { path: "replyTo", select: "message mediaType mediaUrl senderId" },
+        ]);
+
+        const populatedObj = messageObj.toObject();
+        if (populatedObj.message) {
+            populatedObj.message = decryptText(populatedObj.message);
+        }
+        if (populatedObj.replyTo && populatedObj.replyTo.message) {
+            populatedObj.replyTo.message = decryptText(populatedObj.replyTo.message);
+        }
+
+        const conversation = await Conversation.findOne({
+            messages: messageId,
+        });
+
+        if (conversation) {
+            if (conversation.isGroupChat) {
+                io.to(conversation._id.toString()).emit("messageEdited", populatedObj);
+            } else {
+                const receiverId = conversation.participants.find(
+                    (p) => p.toString() !== userId.toString(),
+                );
+                const receiverSocketId = getReceiverSocketId(receiverId);
+                if (receiverSocketId) {
+                    io.to(receiverSocketId).emit("messageEdited", populatedObj);
+                }
+            }
+        }
+
+        res.status(200).json(populatedObj);
+    } catch (error) {
+        console.error("Error in editMessage controller: ", error.message);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+export const deleteMessage = async (req, res) => {
+    try {
+        const { messageId } = req.params;
+        const userId = req.user._id;
+
+        const message = await Message.findById(messageId);
+
+        if (!message) {
+            return res.status(404).json({ error: "Message not found" });
+        }
+
+        if (message.senderId.toString() !== userId.toString()) {
+            return res.status(403).json({ error: "Unauthorized" });
+        }
+
+        message.isDeleted = true;
+        message.message = encryptText("This message was deleted");
+        await message.save();
+
+        const messageObj = await message.populate([
+            {
+                path: "senderId",
+                select: "fullName profilePic username isPublic",
+            },
+            { path: "replyTo", select: "message mediaType mediaUrl senderId" },
+        ]);
+
+        const populatedObj = messageObj.toObject();
+        populatedObj.message = "This message was deleted";
+        if (populatedObj.replyTo && populatedObj.replyTo.message) {
+            populatedObj.replyTo.message = decryptText(populatedObj.replyTo.message);
+        }
+
+        const conversation = await Conversation.findOne({
+            messages: messageId,
+        });
+
+        if (conversation) {
+            if (conversation.isGroupChat) {
+                io.to(conversation._id.toString()).emit("messageDeleted", populatedObj);
+            } else {
+                const receiverId = conversation.participants.find(
+                    (p) => p.toString() !== userId.toString(),
+                );
+                const receiverSocketId = getReceiverSocketId(receiverId);
+                if (receiverSocketId) {
+                    io.to(receiverSocketId).emit("messageDeleted", populatedObj);
+                }
+            }
+        }
+
+        res.status(200).json(populatedObj);
+    } catch (error) {
+        console.error("Error in deleteMessage controller: ", error.message);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};

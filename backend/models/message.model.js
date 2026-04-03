@@ -30,6 +30,14 @@ const messageSchema = new mongoose.Schema(
             enum: ["sent", "read"],
             default: "sent",
         },
+        isEdited: {
+            type: Boolean,
+            default: false,
+        },
+        isDeleted: {
+            type: Boolean,
+            default: false,
+        },
         replyTo: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Message",

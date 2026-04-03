@@ -1,6 +1,8 @@
 import { useAuthContext } from "../../context/AuthContext";
 import { extractTime } from "../../utils/extractTime";
 import useConversation from "../../zustand/useConversation";
+import useEditMessage from "../../hooks/useEditMessage";
+import useDeleteMessage from "../../hooks/useDeleteMessage";
 import { useState } from "react";
 import { notifications } from "@mantine/notifications";
 import {
@@ -13,8 +15,9 @@ import {
     Box,
     Popover,
     UnstyledButton,
+    TextInput,
 } from "@mantine/core";
-import { FiSmile, FiCornerUpLeft } from "react-icons/fi";
+import { FiSmile, FiCornerUpLeft, FiEdit2, FiTrash2, FiX, FiCheck } from "react-icons/fi";
 import { BsCheck, BsCheckAll } from "react-icons/bs";
 
 const Message = ({ message }) => {
@@ -45,12 +48,34 @@ const Message = ({ message }) => {
     const [showReactionPicker, setShowReactionPicker] = useState(false);
     const [isReacting, setIsReacting] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editValue, setEditValue] = useState("");
+    const { editMessage, loading: editLoading } = useEditMessage();
+    const { deleteMessage, loading: deleteLoading } = useDeleteMessage();
     const [animatingReaction, setAnimatingReaction] = useState(null);
 
     const hasUserReactedWith = (reactionEmoji) => {
         return message.reactions?.some(
             (r) => r.userId === authUser._id && r.reaction === reactionEmoji,
         );
+    };
+
+    
+    const handleEditSubmit = async () => {
+        if (!editValue.trim() || editValue === message.message) {
+            setIsEditing(false);
+            return;
+        }
+        const success = await editMessage(message._id, editValue);
+        if (success) {
+            setIsEditing(false);
+        }
+    };
+
+    const handleDeleteClick = async () => {
+        if (window.confirm("Are you sure you want to delete this message for everyone?")) {
+            await deleteMessage(message._id);
+        }
     };
 
     const handleReaction = async (reaction) => {
@@ -219,8 +244,38 @@ const Message = ({ message }) => {
                                 )}
                             </Box>
                         )}
-                        {message.message && (
-                            <Text size="sm" style={{ wordBreak: "break-word" }}>
+                        
+                        {isEditing ? (
+                            <Group gap="xs" mt={message.mediaUrl ? "xs" : 0}>
+                                <TextInput
+                                    value={editValue}
+                                    onChange={(e) => setEditValue(e.currentTarget.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') handleEditSubmit();
+                                        if (e.key === 'Escape') setIsEditing(false);
+                                    }}
+                                    autoFocus
+                                    variant="filled"
+                                    size="xs"
+                                    style={{ flex: 1 }}
+                                    disabled={editLoading}
+                                />
+                                <ActionIcon color="green" onClick={handleEditSubmit} loading={editLoading} size="sm" variant="light">
+                                    <FiCheck size={14} />
+                                </ActionIcon>
+                                <ActionIcon color="red" onClick={() => setIsEditing(false)} disabled={editLoading} size="sm" variant="light">
+                                    <FiX size={14} />
+                                </ActionIcon>
+                            </Group>
+                        ) : message.message && (
+                            <Text
+                                size="sm"
+                                style={{
+                                    wordBreak: "break-word",
+                                    fontStyle: message.isDeleted ? "italic" : "normal",
+                                    color: message.isDeleted ? (fromMe ? "rgba(255,255,255,0.7)" : "var(--mantine-color-dimmed)") : "inherit"
+                                }}
+                            >
                                 {message.message}
                             </Text>
                         )}
@@ -236,6 +291,34 @@ const Message = ({ message }) => {
                             >
                                 <FiCornerUpLeft size={16} />
                             </ActionIcon>
+                            
+                            {fromMe && !message.isDeleted && !isEditing && (
+                                <>
+                                    <ActionIcon
+                                        variant="subtle"
+                                        radius="xl"
+                                        onClick={() => {
+                                            setEditValue(message.message);
+                                            setIsEditing(true);
+                                        }}
+                                        title="Edit"
+                                        color="blue"
+                                    >
+                                        <FiEdit2 size={14} />
+                                    </ActionIcon>
+                                    <ActionIcon
+                                        variant="subtle"
+                                        radius="xl"
+                                        onClick={handleDeleteClick}
+                                        title="Delete for everyone"
+                                        color="red"
+                                        loading={deleteLoading}
+                                    >
+                                        <FiTrash2 size={14} />
+                                    </ActionIcon>
+                                </>
+                            )}
+
                             <Popover
                                 opened={showReactionPicker}
                                 onChange={setShowReactionPicker}
@@ -322,6 +405,11 @@ const Message = ({ message }) => {
                     <Text size="xs" c="dimmed">
                         {formattedTime}
                     </Text>
+                    {!isEditing && message.isEdited && !message.isDeleted && (
+                        <Text size="10px" c="dimmed" fs="italic">
+                            (edited)
+                        </Text>
+                    )}
                     {fromMe &&
                         (message.status === "read" ? (
                             <BsCheckAll

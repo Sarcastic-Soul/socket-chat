@@ -1,4 +1,37 @@
 import Conversation from "../models/conversation.model.js";
+import Message from "../models/message.model.js";
+import { encryptText } from "../utils/encryption.js";
+import { io } from "../socket/socket.js";
+
+
+const emitSystemMessage = async (groupId, senderId, text) => {
+    try {
+        const msg = await Message.create({
+            senderId,
+            receiverId: groupId,
+            message: encryptText(text),
+            isSystem: true,
+        });
+
+        await Conversation.findByIdAndUpdate(groupId, {
+            $push: { messages: msg._id },
+        });
+
+        const populatedMessage = await msg.populate([
+            {
+                path: "senderId",
+                select: "fullName profilePic username isPublic",
+            }
+        ]);
+
+        const msgObj = populatedMessage.toObject();
+        msgObj.message = text; // Decrypt for socket
+
+        io.to(groupId.toString()).emit("newMessage", msgObj);
+    } catch (err) {
+        console.error("Error creating system message:", err);
+    }
+};
 
 export const getGroupDetails = async (req, res) => {
     try {
@@ -63,6 +96,7 @@ export const createGroup = async (req, res) => {
         });
 
         await newGroup.save();
+        await emitSystemMessage(newGroup._id, userId, `created group "${name}"`);
         res.status(201).json(newGroup);
     } catch (error) {
         console.error("Error in createGroup: ", error.message);
@@ -88,6 +122,11 @@ export const updateGroup = async (req, res) => {
         if (groupIcon) group.groupIcon = groupIcon;
 
         await group.save();
+        if (groupName) {
+            await emitSystemMessage(group._id, userId, `changed group name to "${groupName}"`);
+        } else if (groupIcon) {
+            await emitSystemMessage(group._id, userId, `changed the group icon`);
+        }
         res.status(200).json(group);
     } catch (error) {
         console.error("Error in updateGroup: ", error.message);
@@ -136,6 +175,7 @@ export const updateGroupName = async (req, res) => {
 
         group.groupName = name;
         await group.save();
+        await emitSystemMessage(group._id, userId, `changed group name to "${name}"`);
         res.status(200).json(group);
     } catch (error) {
         console.error("Error in updateGroupName: ", error.message);
@@ -182,6 +222,7 @@ export const addParticipant = async (req, res) => {
 
         group.participants.push(userIdToAdd);
         await group.save();
+        await emitSystemMessage(group._id, userId, `added ${userToAdd.fullName} to the group`);
         res.status(200).json(group);
     } catch (error) {
         console.error("Error in addParticipant: ", error.message);
@@ -201,7 +242,7 @@ export const removeParticipant = async (req, res) => {
             return res.status(404).json({ error: "Group not found" });
         }
 
-        if (!group.admins.includes(userId)) {
+        if (!group.admins.includes(userId) && userId.toString() !== userIdToRemove.toString()) {
             return res
                 .status(403)
                 .json({ error: "Only admins can remove participants." });
@@ -216,15 +257,21 @@ export const removeParticipant = async (req, res) => {
                 .json({ error: "Cannot remove the only admin." });
         }
 
+        const { default: User } = await import("../models/user.model.js");
+        const removedUser = await User.findById(userIdToRemove);
+
         group.participants = group.participants.filter(
-            (p) => p.toString() !== userIdToRemove,
+            (p) => p.toString() !== userIdToRemove.toString(),
         );
 
         group.admins = group.admins.filter(
-            (adminId) => adminId.toString() !== userIdToRemove,
+            (adminId) => adminId.toString() !== userIdToRemove.toString(),
         );
 
         await group.save();
+        const isLeaving = userId.toString() === userIdToRemove.toString();
+        const text = isLeaving ? `left the group` : `removed ${removedUser.fullName}`;
+        await emitSystemMessage(group._id, userId, text);
         res.status(200).json(group);
     } catch (error) {
         console.error("Error in removeParticipant: ", error.message);
@@ -260,11 +307,15 @@ export const dismissAdmin = async (req, res) => {
                 .json({ error: "Cannot dismiss the only admin." });
         }
 
+        const { default: User } = await import("../models/user.model.js");
+        const dismissedUser = await User.findById(userIdToDismiss);
+
         group.admins = group.admins.filter(
             (adminId) => adminId.toString() !== userIdToDismiss,
         );
 
         await group.save();
+        await emitSystemMessage(group._id, userId, `dismissed ${dismissedUser.fullName} from admin`);
         res.status(200).json(group);
     } catch (error) {
         console.error("Error in dismissAdmin: ", error.message);
@@ -294,8 +345,12 @@ export const makeAdmin = async (req, res) => {
             return res.status(400).json({ error: "User is already an admin." });
         }
 
+        const { default: User } = await import("../models/user.model.js");
+        const newAdmin = await User.findById(userIdToMakeAdmin);
+
         group.admins.push(userIdToMakeAdmin);
         await group.save();
+        await emitSystemMessage(group._id, userId, `promoted ${newAdmin.fullName} to admin`);
         res.status(200).json(group);
     } catch (error) {
         console.error("Error in makeAdmin: ", error.message);

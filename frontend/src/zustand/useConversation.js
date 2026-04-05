@@ -15,6 +15,9 @@ const useConversation = create((set, get) => ({
     replyingToMessage: null,
     setReplyingToMessage: (message) => set({ replyingToMessage: message }),
 
+    forwardingMessage: null,
+    setForwardingMessage: (message) => set({ forwardingMessage: message }),
+
     typingUsers: [],
     setTypingUsers: (users) => set({ typingUsers: users }),
     addTypingUser: (userId) =>

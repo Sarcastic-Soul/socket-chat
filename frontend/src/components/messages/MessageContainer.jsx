@@ -3,9 +3,11 @@ import { useNavigate } from "react-router-dom";
 import useConversation from "../../zustand/useConversation";
 import MessageInput from "./MessageInput";
 import Messages from "./Messages";
+import ForwardModal from "./ForwardModal";
 import {
     FiMessageSquare,
     FiVideo,
+    FiPhone,
     FiArrowLeft,
     FiSearch,
 } from "react-icons/fi";
@@ -129,22 +131,32 @@ const MessageContainer = () => {
                             >
                                 <FiSearch size={20} />
                             </ActionIcon>
+                            
                             {!selectedConversation.isGroupChat && (
-                                <ActionIcon
-                                    variant="filled"
-                                    radius="xl"
-                                    size="lg"
-                                    onClick={() =>
-                                        callUser(
-                                            selectedConversation.participantId ||
-                                                selectedConversation._id,
-                                        )
-                                    }
-                                    color="teal"
-                                >
-                                    <FiVideo size={20} />
-                                </ActionIcon>
+                                <Group gap="xs">
+                                    <ActionIcon
+                                        variant="light"
+                                        radius="xl"
+                                        size="lg"
+                                        onClick={() => callUser(selectedConversation.participantId || selectedConversation._id, "audio")}
+                                        color="teal"
+                                        title="Audio Call"
+                                    >
+                                        <FiPhone size={20} />
+                                    </ActionIcon>
+                                    <ActionIcon
+                                        variant="light"
+                                        radius="xl"
+                                        size="lg"
+                                        onClick={() => callUser(selectedConversation.participantId || selectedConversation._id, "video")}
+                                        color="teal"
+                                        title="Video Call"
+                                    >
+                                        <FiVideo size={20} />
+                                    </ActionIcon>
+                                </Group>
                             )}
+
                         </Group>
                     </Group>
 
@@ -172,6 +184,7 @@ const MessageContainer = () => {
                     <MessageInput />
                 </>
             )}
+            <ForwardModal />
         </Flex>
     );
 };

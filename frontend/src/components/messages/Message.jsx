@@ -17,13 +17,14 @@ import {
     UnstyledButton,
     TextInput,
 } from "@mantine/core";
-import { FiSmile, FiCornerUpLeft, FiEdit2, FiTrash2, FiX, FiCheck, FiVideo, FiPhoneMissed } from "react-icons/fi";
+import { FiSmile, FiCornerUpLeft, FiCornerUpRight, FiEdit2, FiTrash2, FiX, FiCheck, FiVideo, FiPhoneMissed, FiPhone, FiVideoOff, FiInfo } from "react-icons/fi";
 import { BsCheck, BsCheckAll } from "react-icons/bs";
 
 const Message = ({ message }) => {
     const { authUser } = useAuthContext();
     const { selectedConversation, updateMessage, setReplyingToMessage } =
         useConversation();
+    const { setForwardingMessage } = useConversation();
 
     const senderId = message.senderId._id || message.senderId;
     const fromMe = senderId === authUser._id;
@@ -32,16 +33,20 @@ const Message = ({ message }) => {
     const shakeClass = message.shouldShake ? "shake" : "";
 
     let profilePic;
+    let senderName = message.senderId?.fullName;
     if (fromMe) {
         profilePic = authUser.profilePic;
+        if (!senderName) senderName = authUser.fullName;
     } else {
         if (selectedConversation?.isGroupChat) {
             const sender = selectedConversation.participants.find(
                 (p) => p._id === senderId,
             );
             profilePic = sender?.profilePic;
+            if (!senderName) senderName = sender?.fullName || "Someone";
         } else {
             profilePic = selectedConversation?.profilePic;
+            if (!senderName) senderName = selectedConversation?.fullName || "Someone";
         }
     }
 
@@ -116,8 +121,39 @@ const Message = ({ message }) => {
     const availableReactions = ["👍", "❤️", "😂", "😮", "😢", "😡"];
 
     
+    if (message.isSystem) {
+        return (
+            <Box my="md" style={{ display: 'flex', justifyContent: 'center' }}>
+                <Paper
+                    px="md"
+                    py="xs"
+                    radius="xl"
+                    style={{
+                        backgroundColor: "var(--mantine-color-gray-1)",
+                        border: "1px solid var(--mantine-color-gray-3)"
+                    }}
+                >
+                    <Group gap="xs" align="center">
+                        <FiInfo size={14} color="var(--mantine-color-gray-5)" />
+                        <Text size="xs" fw={500} c="dimmed">
+                            {senderName} {message.message}
+                        </Text>
+                    </Group>
+                </Paper>
+            </Box>
+        );
+    }
+
     if (message.isCall) {
         const isMissed = message.message.includes("Missed");
+        const isVideo = message.message.includes("Video") || message.message.includes("video");
+        
+        let CallIcon = FiPhone;
+        if (isMissed && isVideo) CallIcon = FiVideoOff;
+        else if (isMissed && !isVideo) CallIcon = FiPhoneMissed;
+        else if (!isMissed && isVideo) CallIcon = FiVideo;
+        else CallIcon = FiPhone;
+
         return (
             <Box my="md" style={{ display: 'flex', justifyContent: 'center' }}>
                 <Paper
@@ -130,7 +166,7 @@ const Message = ({ message }) => {
                     }}
                 >
                     <Group gap="xs" align="center">
-                        {isMissed ? <FiPhoneMissed size={16} color="var(--mantine-color-red-6)" /> : <FiVideo size={16} color="var(--mantine-color-gray-6)" />}
+                        <CallIcon size={16} color={isMissed ? "var(--mantine-color-red-6)" : "var(--mantine-color-gray-6)"} />
                         <Text size="sm" fw={600} c={isMissed ? "red.6" : "gray.7"}>
                             {message.message}
                         </Text>
@@ -180,7 +216,17 @@ const Message = ({ message }) => {
                             borderBottomLeftRadius: !fromMe ? 4 : undefined,
                         }}
                     >
+                        
+                        {message.isForwarded && !message.isCall && (
+                            <Group gap={4} mb={4} opacity={0.7} mt={-4}>
+                                <FiCornerUpRight size={12} />
+                                <Text size="10px" fs="italic">
+                                    Forwarded
+                                </Text>
+                            </Group>
+                        )}
                         {message.replyTo && (
+
                             <Paper
                                 p="xs"
                                 mb="xs"
@@ -311,6 +357,17 @@ const Message = ({ message }) => {
 
                     {isHovered && (
                         <>
+                            
+                            <ActionIcon
+                                variant="subtle"
+                                radius="xl"
+                                onClick={() => setForwardingMessage(message)}
+                                title="Forward"
+                                color="grape"
+                            >
+                                <FiCornerUpRight size={16} />
+                            </ActionIcon>
+
                             <ActionIcon
                                 variant="subtle"
                                 radius="xl"

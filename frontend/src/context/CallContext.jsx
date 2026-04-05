@@ -63,13 +63,14 @@ export const CallContextProvider = ({ children }) => {
     useEffect(() => {
         if (!socket) return;
 
-        socket.on("incomingCall", ({ from, callerName, callerPic, signal }) => {
+        socket.on("incomingCall", ({ from, callerName, callerPic, signal, callType }) => {
             setCall({
                 isReceivingCall: true,
                 from,
                 name: callerName,
                 pic: callerPic,
                 signal,
+                callType,
             });
             setReceivingCall(true);
             setCallEnded(false);
@@ -138,14 +139,14 @@ export const CallContextProvider = ({ children }) => {
         // Send Call Log if caller
         if (isCalling && call.userToCall) {
             const duration = callStartTimeRef.current ? Date.now() - callStartTimeRef.current : 0;
-            let logText = "Missed call";
+            let logText = call.callType === "audio" ? "Missed voice call" : "Missed video call";
             
             if (duration > 0) {
                 const totalSeconds = Math.floor(duration / 1000);
                 const minutes = Math.floor(totalSeconds / 60);
                 const seconds = totalSeconds % 60;
                 const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                logText = `Call ended • ${formattedTime}`;
+                logText = call.callType === "audio" ? `Voice call ended • ${formattedTime}` : `Video call ended • ${formattedTime}`;
             }
 
             fetch(`${import.meta.env.VITE_API_URL}/api/messages/send/${call.userToCall}`, {
@@ -189,10 +190,11 @@ export const CallContextProvider = ({ children }) => {
         setRemoteStream(null);
     };
 
-    const setupMedia = async () => {
+    const setupMedia = async (isVideo = true) => {
+        setIsVideoOff(!isVideo);
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
-                video: true,
+                video: isVideo,
                 audio: true,
             });
             setLocalStream(stream);
@@ -233,8 +235,9 @@ export const CallContextProvider = ({ children }) => {
         }
     };
 
-    const callUser = async (userToCallId) => {
-        const stream = await setupMedia();
+    const callUser = async (userToCallId, callType = "video") => {
+        const isVideo = callType === "video";
+        const stream = await setupMedia(isVideo);
         if (!stream) return;
 
         setIsCalling(true);
@@ -263,7 +266,7 @@ export const CallContextProvider = ({ children }) => {
         const offer = await peer.createOffer();
         await peer.setLocalDescription(offer);
 
-        setCall({ isReceivingCall: false, userToCall: userToCallId });
+        setCall({ isReceivingCall: false, userToCall: userToCallId, callType });
 
         socket.emit("callUser", {
             userToCall: userToCallId,
@@ -271,6 +274,7 @@ export const CallContextProvider = ({ children }) => {
             from: authUser._id,
             callerName: authUser.fullName,
             callerPic: authUser.profilePic,
+            callType,
         });
     };
 

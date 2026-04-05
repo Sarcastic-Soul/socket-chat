@@ -32,7 +32,7 @@ io.on("connection", (socket) => {
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
 
     // WebRTC Signaling Events
-    socket.on("callUser", ({ userToCall, signalData, from, callerName, callerPic }) => {
+    socket.on("callUser", ({ userToCall, signalData, from, callerName, callerPic, callType }) => {
         const receiverSocketId = getReceiverSocketId(userToCall);
         if (receiverSocketId) {
             io.to(receiverSocketId).emit("incomingCall", {
@@ -40,6 +40,7 @@ io.on("connection", (socket) => {
                 from,
                 callerName,
                 callerPic,
+                callType,
             });
         }
     });

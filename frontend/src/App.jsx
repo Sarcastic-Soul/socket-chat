@@ -1,13 +1,16 @@
+import React, { Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
-import Home from "./pages/Home";
-import Landing from "./pages/Landing";
-import Login from "./pages/Login";
-import SignUp from "./pages/SignUp";
 import { useAuthContext } from "./context/AuthContext";
-import ProfilePage from "./pages/Profile";
-import UserProfilePage from "./pages/UserProfile";
-import GroupInfo from "./pages/GroupInfo";
-import { Box } from "@mantine/core";
+import { Box, Center, Loader } from "@mantine/core";
+
+// Lazy loading pages for code splitting
+const Home = React.lazy(() => import("./pages/Home"));
+const Landing = React.lazy(() => import("./pages/Landing"));
+const Login = React.lazy(() => import("./pages/Login"));
+const SignUp = React.lazy(() => import("./pages/SignUp"));
+const ProfilePage = React.lazy(() => import("./pages/Profile"));
+const UserProfilePage = React.lazy(() => import("./pages/UserProfile"));
+const GroupInfo = React.lazy(() => import("./pages/GroupInfo"));
 
 function App() {
     const { authUser } = useAuthContext();
@@ -21,6 +24,7 @@ function App() {
                     "light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-8))",
             }}
         >
+            <Suspense fallback={<Center h="100vh"><Loader size="lg" variant="dots" /></Center>}>
             <Routes>
                 <Route path="/" element={authUser ? <Home /> : <Landing />} />
                 <Route
@@ -54,6 +58,7 @@ function App() {
                     }
                 />
             </Routes>
+            </Suspense>
         </Box>
     );
 }

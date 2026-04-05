@@ -37,6 +37,9 @@ const conversationSchema = new mongoose.Schema(
 	{ timestamps: true }
 );
 
+// Optimize finding user's conversations and sorting by recent
+conversationSchema.index({ participants: 1, updatedAt: -1 });
+
 const Conversation = mongoose.model("Conversation", conversationSchema);
 
 export default Conversation;

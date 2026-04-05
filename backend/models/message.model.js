@@ -73,6 +73,9 @@ const messageSchema = new mongoose.Schema(
     { timestamps: true },
 );
 
+// Optimizing database queries for faster message retrieval
+messageSchema.index({ receiverId: 1, createdAt: -1 });
+
 const Message = mongoose.model("Message", messageSchema);
 
 export default Message;

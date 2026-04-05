@@ -3,7 +3,7 @@ import { extractTime } from "../../utils/extractTime";
 import useConversation from "../../zustand/useConversation";
 import useEditMessage from "../../hooks/useEditMessage";
 import useDeleteMessage from "../../hooks/useDeleteMessage";
-import { useState } from "react";
+import React, { useState } from "react";
 import { notifications } from "@mantine/notifications";
 import {
     Avatar,
@@ -515,4 +515,4 @@ const Message = ({ message }) => {
     );
 };
 
-export default Message;
+export default React.memo(Message);

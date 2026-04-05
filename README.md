@@ -16,13 +16,9 @@ A full-stack real-time chat application built with **React + Vite** and **Expres
 
 ## 📸 Screenshots
 
-### 🏠 Home
-
-![Home](./screenshots/home-ss.png)
-
 ### 💬 Chat
 
-![Chat](./screenshots/conversation-ss.png)
+![Chat](./screenshots/chat_ss.png)
 
 ### 📹 Video Call
 

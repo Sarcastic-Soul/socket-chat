@@ -7,6 +7,9 @@ A full-stack real-time chat application built with **React + Vite** and **Expres
 ## 🌐 Live Demo
 
 🔗 [https://socket-chat-nine-tau.vercel.app/](https://socket-chat-nine-tau.vercel.app/)
+
+⚠️ **Important Note:** The backend is deployed on Render's free tier, which may sleep on inactivity. When you open the link, please wait for the server to boot up (it may take up to 10 minutes). A cron job has been made to prevent this, but there is no guarantee. Just watch the video DEMO below if necessary.
+
 🧪 Test Credentials:
 
 * Username: `alice`

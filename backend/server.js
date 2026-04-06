@@ -47,6 +47,11 @@ app.use("/api/users", userRoutes);
 app.use("/api/groups", groupRoutes);
 app.use("/api/cloudinary", cloudinaryRoutes);
 
+// ✅ Health Check Route (Prevents Render Sleep)
+app.get("/healthz", (req, res) => {
+    res.status(200).json({ status: "ok" });
+});
+
 // ✅ Production static serving
 if (process.env.NODE_ENV === "production") {
     app.use(express.static(path.join(__dirname, "/frontend/dist")));

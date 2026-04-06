@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
     Container,
     Title,
@@ -9,6 +10,8 @@ import {
     Card,
     Box,
     Center,
+    Badge,
+    Loader,
 } from "@mantine/core";
 import { Link } from "react-router-dom";
 import {
@@ -61,6 +64,26 @@ const features = [
 ];
 
 const Landing = () => {
+    const [serverStatus, setServerStatus] = useState("checking");
+
+    useEffect(() => {
+        const checkStatus = async () => {
+            try {
+                const res = await fetch(
+                    `${import.meta.env.VITE_API_URL}/healthz`,
+                );
+                if (res.ok) {
+                    setServerStatus("online");
+                } else {
+                    setServerStatus("offline");
+                }
+            } catch (error) {
+                setServerStatus("offline");
+            }
+        };
+        checkStatus();
+    }, []);
+
     return (
         <Box style={{ overflow: "hidden", position: "relative" }}>
             {/* Header Controls */}
@@ -72,7 +95,28 @@ const Landing = () => {
                     zIndex: 100,
                 }}
             >
-                <ThemeToggle />
+                <Group>
+                    {serverStatus === "checking" && (
+                        <Badge
+                            color="blue"
+                            variant="light"
+                            leftSection={<Loader size="xs" />}
+                        >
+                            Waking Server...
+                        </Badge>
+                    )}
+                    {serverStatus === "online" && (
+                        <Badge color="green" variant="light">
+                            Server Online
+                        </Badge>
+                    )}
+                    {serverStatus === "offline" && (
+                        <Badge color="red" variant="light">
+                            Server Offline
+                        </Badge>
+                    )}
+                    <ThemeToggle />
+                </Group>
             </Box>
 
             {/* Hero Section */}

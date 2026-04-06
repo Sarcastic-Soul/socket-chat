@@ -4,22 +4,29 @@ const DB_NAME = "chat-db";
 
 let dbInstance = null;
 
-const dbPromise = openDB(DB_NAME, 1, {
-    upgrade(db) {
-        if (!db.objectStoreNames.contains("messages")) {
-            db.createObjectStore("messages", { keyPath: "id" });
-        }
-    },
-}).then((db) => {
-    dbInstance = db;
-    return db;
-});
+let dbPromise = null;
+
+const getDB = () => {
+    if (!dbPromise) {
+        dbPromise = openDB(DB_NAME, 1, {
+            upgrade(db) {
+                if (!db.objectStoreNames.contains("messages")) {
+                    db.createObjectStore("messages", { keyPath: "id" });
+                }
+            },
+        }).then((db) => {
+            dbInstance = db;
+            return db;
+        });
+    }
+    return dbPromise;
+};
 
 /**
  * Retrieves all cached messages for a given conversation.
  */
 export const getCachedMessages = async (conversationId) => {
-    const db = await dbPromise;
+    const db = await getDB();
     const entry = await db.get("messages", conversationId);
     return entry?.messages || [];
 };
@@ -28,7 +35,7 @@ export const getCachedMessages = async (conversationId) => {
  * Overwrites the cache for a conversation. Use this for the initial fetch.
  */
 export const setCachedMessages = async (conversationId, messages) => {
-    const db = await dbPromise;
+    const db = await getDB();
     await db.put("messages", {
         id: conversationId,
         messages,
@@ -40,7 +47,7 @@ export const setCachedMessages = async (conversationId, messages) => {
  * Prepends a chunk of older messages to the cache within a transaction.
  */
 export const addOlderMessages = async (conversationId, olderMessages) => {
-    const db = await dbPromise;
+    const db = await getDB();
     const tx = db.transaction("messages", "readwrite");
     const store = tx.objectStore("messages");
     const entry = await store.get(conversationId);
@@ -68,7 +75,7 @@ export const addOlderMessages = async (conversationId, olderMessages) => {
  * Appends a single new message to the cache within a transaction.
  */
 export const addMessageToCache = async (conversationId, newMessage) => {
-    const db = await dbPromise;
+    const db = await getDB();
     const tx = db.transaction("messages", "readwrite");
     const store = tx.objectStore("messages");
     const entry = await store.get(conversationId);
@@ -96,7 +103,7 @@ export const addMessageToCache = async (conversationId, newMessage) => {
  * Updates a specific message in the cache (for reactions, edits, etc.)
  */
 export const updateMessageInCache = async (conversationId, updatedMessage) => {
-    const db = await dbPromise;
+    const db = await getDB();
     const tx = db.transaction("messages", "readwrite");
     const store = tx.objectStore("messages");
     const entry = await store.get(conversationId);
@@ -134,6 +141,7 @@ export const clearAllMessages = async () => {
             dbInstance.close();
             dbInstance = null;
         }
+        dbPromise = null;
 
         // Wait a bit for any pending operations to complete
         await new Promise((resolve) => setTimeout(resolve, 100));
